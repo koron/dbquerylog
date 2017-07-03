@@ -1,0 +1,3 @@
+#!/bin/sh
+
+mysql -u vagrant --password=db1234 -h 127.0.0.1 vagrant $*
