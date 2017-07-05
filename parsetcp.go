@@ -26,6 +26,7 @@ func assemble(asm *tcpassembly.Assembler, p gopacket.Packet) {
 }
 
 func streamCreated(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderStream) {
+	// TODO: start MySQL packet parser in goroutine with s.
 	log.Printf("netFlow=%s tcpFlow=%s")
 }
 
