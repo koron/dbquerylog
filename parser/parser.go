@@ -14,10 +14,11 @@ type Parser struct {
 
 	header [4]byte
 	pktLen int
+	body   *bytes.Buffer
 
 	PktLens []int
 	SeqNums []uint8
-	Body    *bytes.Buffer
+	Body    []byte
 }
 
 func New(r io.Reader) *Parser {
@@ -27,10 +28,10 @@ func New(r io.Reader) *Parser {
 }
 
 func (pa *Parser) initParse() {
-	if pa.Body == nil {
-		pa.Body = new(bytes.Buffer)
+	if pa.body == nil {
+		pa.body = new(bytes.Buffer)
 	}
-	pa.Body.Reset()
+	pa.body.Reset()
 	if pa.PktLens == nil {
 		pa.PktLens = make([]int, 0, 10)
 	}
@@ -52,23 +53,24 @@ func (pa *Parser) Parse() error {
 		pa.PktLens = append(pa.PktLens, pa.pktLen)
 		pa.SeqNums = append(pa.SeqNums, pa.header[3])
 		if pa.pktLen == 0 {
-			return nil
+			break
 		}
-		_, err = io.CopyN(pa.Body, pa.r, int64(pa.pktLen))
+		_, err = io.CopyN(pa.body, pa.r, int64(pa.pktLen))
 		if err != nil {
 			return err
 		}
 		if pa.pktLen != maxPacketSize {
-			return nil
+			break
 		}
 	}
+	pa.Body = pa.body.Bytes()
+	return nil
 }
 
 func (pa *Parser) String() string {
-	b := pa.Body.Bytes()
 	var fb byte
-	if len(b) > 0 {
-		fb = b[0]
+	if len(pa.Body) > 0 {
+		fb = pa.Body[0]
 	}
 	return fmt.Sprintf("PktLens=%+v SeqNums=%+v First=%02x",
 		pa.PktLens, pa.SeqNums, fb)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"io"
 	"log"
 	"os"
@@ -35,11 +36,15 @@ func streamCreated(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderStream) {
 	nextStrm++
 	log.Printf("strm#%d: netFlow=%s tcpFlow=%s", n, netFlow, tcpFlow)
 	go func() {
+		defer s.Close()
 		for {
 			err := pa.Parse()
+			if err == io.EOF {
+				log.Printf("strm#%d: EOF", n)
+				return
+			}
 			if err != nil {
-				log.Printf("strm#%d: parse failed: netFlow=%s tcpFlow=%s: %s",
-					n, netFlow, tcpFlow, err)
+				log.Printf("strm#%d: parse failed: %s", n, err)
 				return
 			}
 			// show last parsed MySQL packet.
@@ -49,6 +54,7 @@ func streamCreated(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderStream) {
 }
 
 func main() {
+	flag.Parse()
 	r, err := pcapgo.NewReader(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
