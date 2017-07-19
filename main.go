@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -29,12 +30,43 @@ func assemble(asm *tcpassembly.Assembler, p gopacket.Packet) {
 
 var nextStrm = 0
 
+const serverPort = 3306
+
+func port(e gopacket.Endpoint) (uint16, error) {
+	n, err := strconv.ParseUint(e.String(), 10, 16)
+	if err != nil {
+		return 0, err
+	}
+	return uint16(n), nil
+}
+
 func streamCreated(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderStream) {
 	// start MySQL packet parser in goroutine with s.
-	pa := parser.New(s)
 	n := nextStrm
 	nextStrm++
 	log.Printf("strm#%d: netFlow=%s tcpFlow=%s", n, netFlow, tcpFlow)
+
+	// Check ports
+	srcPort, err := port(tcpFlow.Src())
+	if err != nil {
+		log.Printf("strm#%d: failed to parse source port: %s", n, err)
+	}
+	dstPort, err := port(tcpFlow.Dst())
+	if err != nil {
+		log.Printf("strm#%d: failed to parse destination port: %s", n, err)
+	}
+	if srcPort != serverPort && dstPort != serverPort {
+		log.Printf("strm#%d: both ports (%s) are not for MySQL", n, tcpFlow)
+	}
+
+	// Create a parser.
+	var pa *parser.Parser
+	if srcPort == serverPort {
+		pa = parser.NewFromServer(s)
+	} else {
+		pa = parser.NewFromClient(s)
+	}
+
 	go func() {
 		defer s.Close()
 		for {
