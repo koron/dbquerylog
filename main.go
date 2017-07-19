@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -40,13 +41,15 @@ func port(e gopacket.Endpoint) (uint16, error) {
 	return uint16(n), nil
 }
 
+var independentParsers = map[string]*parser.Parser{}
+
 func streamCreated(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderStream) {
 	// start MySQL packet parser in goroutine with s.
 	n := nextStrm
 	nextStrm++
 	log.Printf("strm#%d: netFlow=%s tcpFlow=%s", n, netFlow, tcpFlow)
 
-	// Check ports
+	// Check ports of source and destination.
 	srcPort, err := port(tcpFlow.Src())
 	if err != nil {
 		log.Printf("strm#%d: failed to parse source port: %s", n, err)
@@ -61,10 +64,21 @@ func streamCreated(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderStream) {
 
 	// Create a parser.
 	var pa *parser.Parser
+	var addr string
 	if srcPort == serverPort {
 		pa = parser.NewFromServer(s)
+		addr = fmt.Sprintf("%s:%s", netFlow.Dst(), tcpFlow.Dst())
 	} else {
 		pa = parser.NewFromClient(s)
+		addr = fmt.Sprintf("%s:%s", netFlow.Src(), tcpFlow.Src())
+	}
+
+	// Share parser state.
+	if p0, ok := independentParsers[addr]; ok {
+		pa.ShareContext(p0)
+		delete(independentParsers, addr)
+	} else {
+		independentParsers[addr] = pa
 	}
 
 	go func() {

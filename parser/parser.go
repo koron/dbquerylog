@@ -17,21 +17,10 @@ const (
 	fromClient
 )
 
-type state int
-
-const (
-	none state = iota
-	handshake
-	auth
-	authResend
-	awaitingReply
-	connected
-)
-
 type Parser struct {
 	r   *bufio.Reader
 	dir dir
-	st  state
+	ctx *Context
 
 	header [4]byte
 	pktLen int
@@ -49,6 +38,7 @@ func NewFromServer(r io.Reader) *Parser {
 	return &Parser{
 		r:   bufio.NewReader(r),
 		dir: fromServer,
+		ctx: new(Context),
 	}
 }
 
@@ -57,6 +47,7 @@ func NewFromClient(r io.Reader) *Parser {
 	return &Parser{
 		r:   bufio.NewReader(r),
 		dir: fromClient,
+		ctx: new(Context),
 	}
 }
 
@@ -112,20 +103,20 @@ func (pa *Parser) parseServerPacket() error {
 	if len(pa.Body) < 1 {
 		return errors.New("less body as packet from server")
 	}
-	if pa.st == none {
+	if pa.ctx.State == None {
 		pkt, err := NewServerHandshakePacket(pa.Body)
 		if err != nil {
 			return err
 		}
-		pa.st = handshake
+		pa.ctx.State = Handshake
 		pa.Detail = pkt
 		return nil
 	}
 	switch pa.Body[0] {
 	case 0x00:
-		if pa.st == auth {
+		if pa.ctx.State == Auth {
 			// TODO: logged in successfully.
-			pa.st = connected
+			pa.ctx.State = Connected
 			break
 		}
 		return pa.parseServerResultPacket()
@@ -155,22 +146,22 @@ func (pa *Parser) parseServerResultPacket() error {
 }
 
 func (pa *Parser) parseClientPacket() error {
-	switch pa.st {
-	case handshake:
+	switch pa.ctx.State {
+	case Handshake:
 		pkt, err := NewClientHandshakePacket(pa.Body)
 		if err != nil {
 			return err
 		}
-		pa.st = auth
+		pa.ctx.State = Auth
 		pa.Detail = pkt
-	case authResend:
+	case AuthResend:
 		pkt, err := NewClientAuthResendPacket(pa.Body)
 		if err != nil {
 			return err
 		}
-		pa.st = auth
+		pa.ctx.State = Auth
 		pa.Detail = pkt
-	case awaitingReply:
+	case AwaitingReply:
 		pkt, err := NewAwaitingReplyPacket(pa.Body)
 		if err != nil {
 			return err
@@ -184,6 +175,17 @@ func (pa *Parser) parseClientPacket() error {
 		pa.Detail = pkt
 	}
 	return nil
+}
+
+func (pa *Parser) ShareContext(other *Parser) {
+	if pa == other {
+		return
+	}
+	pa.ctx = other.ctx
+}
+
+func (pa *Parser) Context() Context {
+	return *pa.ctx
 }
 
 func (pa *Parser) String() string {
