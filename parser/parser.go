@@ -23,6 +23,8 @@ const (
 	none state = iota
 	handshake
 	auth
+	authResend
+	awaitingReply
 	connected
 )
 
@@ -153,7 +155,34 @@ func (pa *Parser) parseServerResultPacket() error {
 }
 
 func (pa *Parser) parseClientPacket() error {
-	// TODO:
+	switch pa.st {
+	case handshake:
+		pkt, err := NewClientHandshakePacket(pa.Body)
+		if err != nil {
+			return err
+		}
+		pa.st = auth
+		pa.Detail = pkt
+	case authResend:
+		pkt, err := NewClientAuthResendPacket(pa.Body)
+		if err != nil {
+			return err
+		}
+		pa.st = auth
+		pa.Detail = pkt
+	case awaitingReply:
+		pkt, err := NewAwaitingReplyPacket(pa.Body)
+		if err != nil {
+			return err
+		}
+		pa.Detail = pkt
+	default:
+		pkt, err := NewCOMPacket(pa.Body)
+		if err != nil {
+			return err
+		}
+		pa.Detail = pkt
+	}
 	return nil
 }
 
@@ -166,6 +195,5 @@ func (pa *Parser) String() string {
 		return fmt.Sprintf("[%d] PktLens=%+v SeqNums=%+v First=%02x",
 			pa.dir, pa.PktLens, pa.SeqNums, fb)
 	}
-	return fmt.Sprintf("[%d] PktLens=%+v SeqNums=%+v Detail=%+v",
-		pa.dir, pa.PktLens, pa.SeqNums, pa.Detail)
+	return fmt.Sprintf("[%d] Detail=%+v lens=%+v", pa.dir, pa.Detail, pa.PktLens)
 }
