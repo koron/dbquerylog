@@ -10,3 +10,12 @@ for entry in * ; do
   fi
 done
 )
+
+(
+cd /home/vagrant
+mkdir -p go/src/github.com/koron
+cd go/src/github.com/koron
+ln -s /vagrant mysql-packet-sniffer
+cd mysql-packet-sniffer
+go get -v ./...
+)

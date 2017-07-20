@@ -41,6 +41,15 @@ __EOS__
 
     apt install -y man tcpdump
 
+    # Golang 1.8
+    apt install -y software-properties-common
+    add-apt-repository -y ppa:longsleep/golang-backports
+    apt update
+    apt install -y golang-1.8-go
+    echo 'export PATH="$PATH:/usr/lib/go-1.8/bin"' > /etc/profile.d/golang-1.8.sh
+    export PATH="$PATH:/usr/lib/go-1.8/bin"
+    hash -r
+
     sudo -u vagrant /vagrant/remote/bin/setup-home.sh
   SHELL
 
