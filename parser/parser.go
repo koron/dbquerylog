@@ -114,13 +114,13 @@ func (pa *Parser) parseServerPacket() error {
 	}
 	switch pa.Body[0] {
 	case 0x00:
-		pkt, err := NewOKPacket(pa.Body)
-		if err != nil {
-			return err
-		}
-		pa.Detail = pkt
 		if pa.ctx.State == Auth {
 			// logged in successfully.
+			pkt, err := NewOKPacket(pa.Body)
+			if err != nil {
+				return err
+			}
+			pa.Detail = pkt
 			pa.ctx.State = Connected
 			break
 		}
