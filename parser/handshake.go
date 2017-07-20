@@ -13,7 +13,7 @@ type ServerHandshakePacket struct {
 	ScrambleBuffer   uint64
 	Filter           uint8
 	ServerCapability uint16
-	ServerLanguage   uint8
+	Charset          uint8
 	ServerStatus     uint16
 }
 
@@ -47,7 +47,7 @@ func NewServerHandshakePacket(b []byte) (*ServerHandshakePacket, error) {
 	if err != nil {
 		return nil, err
 	}
-	pkt.ServerLanguage, err = r.ReadByte()
+	pkt.Charset, err = r.ReadByte()
 	if err != nil {
 		return nil, err
 	}
@@ -55,14 +55,52 @@ func NewServerHandshakePacket(b []byte) (*ServerHandshakePacket, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO:
+	// FIXME: parse other fields.
 	return pkt, nil
 }
 
 type ClientHandshakePacket struct {
+	ClientFlags    uint32
+	MaxPacketSize  uint32
+	Charset        uint64
+	Username       string
+	HashedPassword string
+	Database       string
 }
 
 func NewClientHandshakePacket(b []byte) (*ClientHandshakePacket, error) {
-	// TODO:
-	return &ClientHandshakePacket{}, nil
+	var (
+		err error
+		pkt = &ClientHandshakePacket{}
+		r   = bufio.NewReader(bytes.NewReader(b))
+	)
+	err = binary.Read(r, binary.LittleEndian, &pkt.ClientFlags)
+	if err != nil {
+		return nil, err
+	}
+	err = binary.Read(r, binary.LittleEndian, &pkt.MaxPacketSize)
+	if err != nil {
+		return nil, err
+	}
+	pkt.Charset, err = readLengthEncodedInteger(r)
+	if err != nil {
+		return nil, err
+	}
+	_, err = r.Discard(23)
+	if err != nil {
+		return nil, err
+	}
+	pkt.Username, err = r.ReadString(0x00)
+	if err != nil {
+		return nil, err
+	}
+	pkt.HashedPassword, err = readLengthEncodedString(r)
+	if err != nil {
+		return nil, err
+	}
+	pkt.Database, err = r.ReadString(0x00)
+	if err != nil {
+		return nil, err
+	}
+	return pkt, nil
 }

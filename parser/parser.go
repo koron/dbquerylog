@@ -114,8 +114,13 @@ func (pa *Parser) parseServerPacket() error {
 	}
 	switch pa.Body[0] {
 	case 0x00:
+		pkt, err := NewOKPacket(pa.Body)
+		if err != nil {
+			return err
+		}
+		pa.Detail = pkt
 		if pa.ctx.State == Auth {
-			// TODO: logged in successfully.
+			// logged in successfully.
 			pa.ctx.State = Connected
 			break
 		}
@@ -197,5 +202,5 @@ func (pa *Parser) String() string {
 		return fmt.Sprintf("[%d] PktLens=%+v SeqNums=%+v First=%02x",
 			pa.dir, pa.PktLens, pa.SeqNums, fb)
 	}
-	return fmt.Sprintf("[%d] Detail=%+v lens=%+v", pa.dir, pa.Detail, pa.PktLens)
+	return fmt.Sprintf("[%d] Detail=%#v lens=%+v", pa.dir, pa.Detail, pa.PktLens)
 }
