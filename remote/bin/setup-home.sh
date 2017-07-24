@@ -1,6 +1,17 @@
 #!/bin/sh
 
-touch /home/vagrant/.hushlogin
+(
+cd /home/vagrant
+
+cat << __EOF__ > .screenrc
+startup_message off
+escape ^Tt
+vbell off
+hardstatus string "%?%H %?[screen %n%?: %t%?] %h"
+__EOF__
+
+touch .hushlogin
+)
 
 (
 cd /vagrant/remote
