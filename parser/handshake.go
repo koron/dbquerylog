@@ -1,11 +1,5 @@
 package parser
 
-import (
-	"bufio"
-	"bytes"
-	"encoding/binary"
-)
-
 type ServerHandshakePacket struct {
 	ProtocolVersion  uint8
 	ServerVersion    string
@@ -19,41 +13,19 @@ type ServerHandshakePacket struct {
 
 func NewServerHandshakePacket(b []byte) (*ServerHandshakePacket, error) {
 	var (
-		err error
 		pkt = &ServerHandshakePacket{}
-		r   = bufio.NewReader(bytes.NewReader(b))
+		buf = &decbuf{buf: b}
 	)
-	pkt.ProtocolVersion, err = r.ReadByte()
-	if err != nil {
-		return nil, err
-	}
-	pkt.ServerVersion, err = r.ReadString(0x00)
-	if err != nil {
-		return nil, err
-	}
-	err = binary.Read(r, binary.LittleEndian, &pkt.ThreadID)
-	if err != nil {
-		return nil, err
-	}
-	err = binary.Read(r, binary.LittleEndian, &pkt.ScrambleBuffer)
-	if err != nil {
-		return nil, err
-	}
-	pkt.Filter, err = r.ReadByte()
-	if err != nil {
-		return nil, err
-	}
-	err = binary.Read(r, binary.LittleEndian, &pkt.ServerCapability)
-	if err != nil {
-		return nil, err
-	}
-	pkt.Charset, err = r.ReadByte()
-	if err != nil {
-		return nil, err
-	}
-	err = binary.Read(r, binary.LittleEndian, &pkt.ServerStatus)
-	if err != nil {
-		return nil, err
+	pkt.ProtocolVersion, _ = buf.ReadUint8()
+	pkt.ServerVersion, _ = buf.ReadString()
+	pkt.ThreadID, _ = buf.ReadUint32()
+	pkt.ScrambleBuffer, _ = buf.ReadUint64()
+	pkt.Filter, _ = buf.ReadUint8()
+	pkt.ServerCapability, _ = buf.ReadUint16()
+	pkt.Charset, _ = buf.ReadUint8()
+	pkt.ServerStatus, _ = buf.ReadUint16()
+	if buf.err != nil {
+		return nil, buf.err
 	}
 	// FIXME: parse other fields.
 	return pkt, nil
@@ -70,37 +42,18 @@ type ClientHandshakePacket struct {
 
 func NewClientHandshakePacket(b []byte) (*ClientHandshakePacket, error) {
 	var (
-		err error
 		pkt = &ClientHandshakePacket{}
-		r   = bufio.NewReader(bytes.NewReader(b))
+		buf = &decbuf{buf: b}
 	)
-	err = binary.Read(r, binary.LittleEndian, &pkt.ClientFlags)
-	if err != nil {
-		return nil, err
-	}
-	err = binary.Read(r, binary.LittleEndian, &pkt.MaxPacketSize)
-	if err != nil {
-		return nil, err
-	}
-	pkt.Charset, err = readLengthEncodedInteger(r)
-	if err != nil {
-		return nil, err
-	}
-	_, err = r.Discard(23)
-	if err != nil {
-		return nil, err
-	}
-	pkt.Username, err = r.ReadString(0x00)
-	if err != nil {
-		return nil, err
-	}
-	pkt.HashedPassword, err = readLengthEncodedString(r)
-	if err != nil {
-		return nil, err
-	}
-	pkt.Database, err = r.ReadString(0x00)
-	if err != nil {
-		return nil, err
+	pkt.ClientFlags, _ = buf.ReadUint32()
+	pkt.MaxPacketSize, _ = buf.ReadUint32()
+	pkt.Charset, _ = buf.ReadUintV()
+	buf.Discard(23)
+	pkt.Username, _ = buf.ReadString()
+	pkt.HashedPassword, _ = buf.ReadStringV()
+	pkt.Database, _ = buf.ReadString()
+	if buf.err != nil {
+		return nil, buf.err
 	}
 	return pkt, nil
 }

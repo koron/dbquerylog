@@ -1,9 +1,6 @@
 package parser
 
 import (
-	"bufio"
-	"bytes"
-	"encoding/binary"
 	"fmt"
 )
 
@@ -17,26 +14,19 @@ type OKPacket struct {
 
 func NewOKPacket(b []byte) (*OKPacket, error) {
 	var (
-		err error
 		pkt = &OKPacket{}
-		r   = bufio.NewReader(bytes.NewReader(b[1:]))
+		buf = decbuf{buf: b}
 	)
 	if b[0] != 0x00 {
 		return nil, fmt.Errorf("OK packet must start with 0x00: %02x", b[0])
 	}
-	pkt.AffectedRows, err = readLengthEncodedInteger(r)
-	if err != nil {
-		return nil, err
-	}
-	pkt.InsertID, err = readLengthEncodedInteger(r)
-	err = binary.Read(r, binary.LittleEndian, &pkt.Status)
-	if err != nil {
-		return nil, err
-	}
-	err = binary.Read(r, binary.LittleEndian, &pkt.WarningCount)
-	if err != nil {
-		return nil, err
-	}
+	pkt.AffectedRows, _ = buf.ReadUintV()
+	pkt.InsertID, _ = buf.ReadUintV()
+	pkt.Status, _ = buf.ReadUint16()
+	pkt.WarningCount, _ = buf.ReadUint16()
 	// FIXME: read string.
+	if buf.err != nil {
+		return nil, buf.err
+	}
 	return pkt, nil
 }
