@@ -6,10 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
-	"strconv"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/tcpassembly/tcpreader"
 	"github.com/koron/mysql-packet-sniffer/parser"
 	"github.com/koron/mysql-packet-sniffer/tcpasm"
 )
@@ -18,47 +15,27 @@ var nextStrm = 0
 
 const serverPort = 3306
 
-func port(e gopacket.Endpoint) (uint16, error) {
-	n, err := strconv.ParseUint(e.String(), 10, 16)
-	if err != nil {
-		return 0, err
-	}
-	return uint16(n), nil
-}
-
 var independentParsers = map[string]*parser.Parser{}
 
-func streamCreated(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderStream) {
-	// start MySQL packet parser in goroutine with s.
+// start MySQL packet parser in goroutine with s.
+func streamCreated2(src, dst tcpasm.Endpoint, s io.ReadCloser) error {
+	if src.Port != serverPort && dst.Port != serverPort {
+		return fmt.Errorf("both port not for MySQL: src=%s dst=%s", src, dst)
+	}
+
 	n := nextStrm
 	nextStrm++
-	log.Printf("strm#%d: netFlow=%s tcpFlow=%s", n, netFlow, tcpFlow)
-
-	// Check ports of source and destination.
-	srcPort, err := port(tcpFlow.Src())
-	if err != nil {
-		log.Printf("strm#%d: failed to parse source port: %s", n, err)
-		return
-	}
-	dstPort, err := port(tcpFlow.Dst())
-	if err != nil {
-		log.Printf("strm#%d: failed to parse destination port: %s", n, err)
-		return
-	}
-	if srcPort != serverPort && dstPort != serverPort {
-		log.Printf("strm#%d: both ports (%s) are not for MySQL", n, tcpFlow)
-		return
-	}
+	log.Printf("strm#%d: src=%s dst=%s", n, src, dst)
 
 	// Create a parser.
 	var pa *parser.Parser
 	var addr string
-	if srcPort == serverPort {
+	if src.Port == serverPort {
 		pa = parser.NewFromServer(s)
-		addr = fmt.Sprintf("%s:%s", netFlow.Dst(), tcpFlow.Dst())
+		addr = dst.String()
 	} else {
 		pa = parser.NewFromClient(s)
-		addr = fmt.Sprintf("%s:%s", netFlow.Src(), tcpFlow.Src())
+		addr = src.String()
 	}
 
 	// Share parser state.
@@ -88,11 +65,17 @@ func streamCreated(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderStream) {
 			log.Printf("strm#%d: %s", n, pa.String())
 		}
 	}()
+
+	return nil
 }
 
 func main() {
 	flag.Parse()
-	err := tcpasm.AssembleStream(os.Stdin, streamCreated)
+	asm := &tcpasm.StreamAssembler{
+		WarnLog: log.New(os.Stderr, "WARN ", log.LstdFlags),
+		Created: streamCreated2,
+	}
+	err := asm.Assemble(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}
