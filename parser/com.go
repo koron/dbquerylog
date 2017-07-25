@@ -5,15 +5,12 @@ import (
 )
 
 type COMPacket struct {
-	Raw []byte
+	Type CommandType
+	Raw  []byte
 }
 
-type QueryPacket struct {
-	Query string
-}
-
-type PreparePacket struct {
-	Query string
+func (p *COMPacket) CommandType() CommandType {
+	return p.Type
 }
 
 func NewCOMPacket(b []byte) (interface{}, error) {
@@ -21,12 +18,33 @@ func NewCOMPacket(b []byte) (interface{}, error) {
 		return nil, fmt.Errorf("too short COM packet")
 	}
 	switch b[0] {
+
 	case 0x03:
-		return &QueryPacket{Query: string(b[1:])}, nil
+		pkt, err := NewQueryPacket(b)
+		if err != nil {
+			return nil, err
+		}
+		return pkt, err
+
 	case 0x16:
-		return &PreparePacket{Query: string(b[1:])}, nil
+		pkt, err := NewPrepareQueryPacket(b)
+		if err != nil {
+			return nil, err
+		}
+		return pkt, nil
+
+	case 0x17:
+		pkt, err := NewExecuteQueryPacket(b)
+		if err != nil {
+			return nil, err
+		}
+		return pkt, nil
+
 	default:
 		// TODO: implement for other commands
-		return &COMPacket{Raw: b}, nil
+		return &COMPacket{
+			Type: CommandType(b[0]),
+			Raw:  b[1:],
+		}, nil
 	}
 }

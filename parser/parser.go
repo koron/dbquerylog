@@ -65,6 +65,7 @@ func (pa *Parser) initParse() {
 		pa.SeqNums = make([]uint8, 0, 10)
 	}
 	pa.SeqNums = pa.SeqNums[:0]
+	pa.Body = nil
 }
 
 func (pa *Parser) Parse() error {
@@ -125,7 +126,22 @@ func (pa *Parser) parseServerPacket() error {
 			pa.ctx.State = Connected
 			break
 		}
-		return pa.parseServerResultPacket()
+		switch pa.ctx.LastCommand {
+		case Prepare:
+			pkt, err := NewPrepareResultPacket(pa.Body)
+			if err != nil {
+				return err
+			}
+			pa.Detail = pkt
+			return nil
+		case Query, Execute, Reset:
+			return pa.parseServerResultPacket()
+		default:
+			// TODO:
+			pa.Detail = nil
+			return nil
+		}
+
 	case 0xfe:
 		pkt, err := NewEOFPacket(pa.Body)
 		if err != nil {
@@ -229,6 +245,11 @@ func (pa *Parser) parseClientPacket() error {
 			return err
 		}
 		pa.Detail = pkt
+		if c, ok := pkt.(Command); ok {
+			pa.ctx.LastCommand = c.CommandType()
+		} else {
+			pa.ctx.LastCommand = -1
+		}
 	}
 	return nil
 }

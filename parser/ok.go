@@ -15,7 +15,7 @@ type OKPacket struct {
 func NewOKPacket(b []byte) (*OKPacket, error) {
 	var (
 		pkt = &OKPacket{}
-		buf = decbuf{buf: b}
+		buf = &decbuf{buf: b}
 	)
 	if b[0] != 0x00 {
 		return nil, fmt.Errorf("OK packet must start with 0x00: %02x", b[0])
