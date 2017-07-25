@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 )
 
@@ -14,12 +13,14 @@ type decbuf struct {
 	err error
 }
 
+var EOB = errors.New("not enough buffer")
+
 func (b *decbuf) ReadUint8() (uint8, error) {
 	if b.err != nil {
 		return 0, b.err
 	}
 	if len(b.buf) < 1 {
-		b.err = io.EOF
+		b.err = EOB
 		return 0, b.err
 	}
 	r := b.buf[0]
@@ -32,7 +33,7 @@ func (b *decbuf) ReadUint16() (uint16, error) {
 		return 0, b.err
 	}
 	if len(b.buf) < 2 {
-		b.err = io.EOF
+		b.err = EOB
 		return 0, b.err
 	}
 	r := binary.LittleEndian.Uint16(b.buf)
@@ -45,7 +46,7 @@ func (b *decbuf) ReadUint32() (uint32, error) {
 		return 0, b.err
 	}
 	if len(b.buf) < 4 {
-		b.err = io.EOF
+		b.err = EOB
 		return 0, b.err
 	}
 	r := binary.LittleEndian.Uint32(b.buf)
@@ -58,7 +59,7 @@ func (b *decbuf) ReadUint64() (uint64, error) {
 		return 0, b.err
 	}
 	if len(b.buf) < 8 {
-		b.err = io.EOF
+		b.err = EOB
 		return 0, b.err
 	}
 	r := binary.LittleEndian.Uint64(b.buf)
@@ -68,7 +69,7 @@ func (b *decbuf) ReadUint64() (uint64, error) {
 
 func (b *decbuf) readNUint(n int) (uint64, error) {
 	if len(b.buf) < n {
-		b.err = io.EOF
+		b.err = EOB
 		return 0, b.err
 	}
 	r := uint64(0)
@@ -84,7 +85,7 @@ func (b *decbuf) ReadUintV() (uint64, error) {
 		return 0, b.err
 	}
 	if len(b.buf) < 1 {
-		b.err = io.EOF
+		b.err = EOB
 		return 0, b.err
 	}
 	f := b.buf[0]
@@ -132,7 +133,7 @@ func (b *decbuf) ReadStringV() (string, error) {
 		return "", b.err
 	}
 	if len(b.buf) < int(n) {
-		b.err = io.EOF
+		b.err = EOB
 		return "", b.err
 	}
 	s := string(b.buf[:n])
@@ -145,7 +146,7 @@ func (b *decbuf) Discard(n int) error {
 		return b.err
 	}
 	if len(b.buf) < n {
-		b.err = io.EOF
+		b.err = EOB
 		return b.err
 	}
 	b.buf = b.buf[n:]

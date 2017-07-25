@@ -87,6 +87,9 @@ func streamCreated(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderStream) {
 			err := pa.Parse()
 			if err == io.EOF {
 				log.Printf("strm#%d: EOF", n)
+				if len(pa.Body) > 0 {
+					log.Printf("  %#x", pa.Body)
+				}
 				return
 			}
 			if err != nil {

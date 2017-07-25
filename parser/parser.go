@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 )
 
 const maxPacketSize = 1<<24 - 1
@@ -131,6 +132,7 @@ func (pa *Parser) parseServerPacket() error {
 			return err
 		}
 		pa.Detail = pkt
+		pa.ctx.ResultState = 0
 	case 0xff:
 		pkt, err := NewErrorPacket(pa.Body)
 		if err != nil {
@@ -145,9 +147,58 @@ func (pa *Parser) parseServerPacket() error {
 }
 
 func (pa *Parser) parseServerResultPacket() error {
-	// TODO: parse processing results if any commands are running.
-	pa.Detail = &ServerResultPacket{}
-	return nil
+	switch pa.ctx.ResultState {
+	case 0:
+		buf := &decbuf{buf: pa.Body}
+		n, err := buf.ReadUintV()
+		if err != nil {
+			return err
+		}
+		if n == 0 {
+			pkt, err := NewResultNonePacket(buf.buf)
+			if err != nil {
+				return err
+			}
+			pa.Detail = pkt
+			pa.ctx.ResultState = 0
+			return nil
+		}
+		pa.Detail = &ResultFieldNumPacket{Num: n}
+		pa.ctx.ResultState = Fields
+		pa.ctx.FieldNCurr = 0
+		pa.ctx.FieldNMax = n
+		return nil
+
+	case Fields:
+		pkt, err := NewResultFieldPacket(pa.Body)
+		if err != nil {
+			return nil
+		}
+		pa.Detail = pkt
+		pa.ctx.FieldNCurr++
+		if pa.ctx.FieldNCurr >= pa.ctx.FieldNMax {
+			pa.ctx.ResultState = Records
+		}
+		return nil
+
+	case Records:
+		var nfields int
+		if pa.ctx.FieldNMax <= math.MaxInt32 {
+			nfields = int(pa.ctx.FieldNMax)
+		} else {
+			nfields = math.MaxInt32
+		}
+		pkt, err := NewResultRecordPacket(pa.Body, nfields)
+		if err != nil {
+			return nil
+		}
+		pa.Detail = pkt
+		return nil
+
+	default:
+		return fmt.Errorf("unexpected query result mode: %d",
+			pa.ctx.ResultState)
+	}
 }
 
 func (pa *Parser) parseClientPacket() error {
