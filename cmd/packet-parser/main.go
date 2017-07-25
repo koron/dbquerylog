@@ -9,25 +9,10 @@ import (
 	"strconv"
 
 	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/pcapgo"
-	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
 	"github.com/koron/mysql-packet-sniffer/parser"
 	"github.com/koron/mysql-packet-sniffer/tcpasm"
 )
-
-func assemble(asm *tcpassembly.Assembler, p gopacket.Packet) {
-	if p.NetworkLayer() == nil || p.TransportLayer() == nil || p.TransportLayer().LayerType() != layers.LayerTypeTCP {
-		return
-	}
-	var (
-		flow = p.NetworkLayer().NetworkFlow()
-		tcp  = p.TransportLayer().(*layers.TCP)
-		time = p.Metadata().Timestamp
-	)
-	asm.AssembleWithTimestamp(flow, tcp, time)
-}
 
 var nextStrm = 0
 
@@ -53,13 +38,16 @@ func streamCreated(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderStream) {
 	srcPort, err := port(tcpFlow.Src())
 	if err != nil {
 		log.Printf("strm#%d: failed to parse source port: %s", n, err)
+		return
 	}
 	dstPort, err := port(tcpFlow.Dst())
 	if err != nil {
 		log.Printf("strm#%d: failed to parse destination port: %s", n, err)
+		return
 	}
 	if srcPort != serverPort && dstPort != serverPort {
 		log.Printf("strm#%d: both ports (%s) are not for MySQL", n, tcpFlow)
+		return
 	}
 
 	// Create a parser.
@@ -104,20 +92,8 @@ func streamCreated(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderStream) {
 
 func main() {
 	flag.Parse()
-	r, err := pcapgo.NewReader(os.Stdin)
+	err := tcpasm.AssembleStream(os.Stdin, streamCreated)
 	if err != nil {
 		log.Fatal(err)
-	}
-	src := gopacket.NewPacketSource(r, layers.LayerTypeEthernet)
-	asm := tcpasm.New(streamCreated)
-	for {
-		p, err := src.NextPacket()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			log.Print("WARN:", err)
-			continue
-		}
-		assemble(asm, p)
 	}
 }
