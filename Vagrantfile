@@ -18,9 +18,9 @@ Vagrant.configure("2") do |config|
     update-locale LANG=C.UTF-8 LANGUAGE=
     sed -i.bak -e 's!http://\\(archive\\|security\\).ubuntu.com/!ftp://ftp.jaist.ac.jp/!g' /etc/apt/sources.list
     apt update
-    apt install -y debconf-utils
 
     # MySQL
+    apt install -y debconf-utils
     debconf-set-selections <<< 'mysql-server mysql-server/root_password password mysql123'
     debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password mysql123'
     apt install -y mysql-server
@@ -39,18 +39,18 @@ GRANT ALL ON vagrant.* TO vagrant@"%" IDENTIFIED BY 'db1234';
 FLUSH PRIVILEGES;
 __EOS__
 
-    apt install -y man tcpdump
-
     # Golang 1.8
-    apt install -y software-properties-common
-    add-apt-repository -y ppa:longsleep/golang-backports
-    apt update
-    apt install -y golang-1.8-go
-    echo 'export PATH="$PATH:/usr/lib/go-1.8/bin"' > /etc/profile.d/golang-1.8.sh
-    export PATH="$PATH:/usr/lib/go-1.8/bin"
+    apt install -y g++ gcc libc6-dev pkg-config
+    curl -s -o go.tar.gz https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz
+    tar xzf go.tar.gz -C /usr/local
+    rm -r go.tar.gz
+    echo 'export PATH="$PATH:/usr/local/go/bin"' > /etc/profile.d/go.sh
     hash -r
 
-    sudo -u vagrant /vagrant/remote/bin/setup-home.sh
+    # Others tools
+    apt install -y man tcpdump screen
+
+    sudo -i -u vagrant /vagrant/remote/bin/setup-home.sh
   SHELL
 
 end
