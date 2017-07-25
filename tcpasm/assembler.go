@@ -1,20 +1,85 @@
 package tcpasm
 
 import (
+	"io"
+	"log"
+
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcapgo"
 	"github.com/google/gopacket/tcpassembly"
+	"github.com/google/gopacket/tcpassembly/tcpreader"
 )
 
-func New(created StreamCreated) *tcpassembly.Assembler {
-	f := &StreamFactory{
-		created: created,
-	}
-	p := tcpassembly.NewStreamPool(f)
-	return tcpassembly.NewAssembler(p)
+type StreamCreated func(src, dst Endpoint, r io.ReadCloser) error
+
+type Assembler struct {
+	Warn    *log.Logger
+	Created StreamCreated
 }
 
-func Assemble(asm *tcpassembly.Assembler, p gopacket.Packet) {
+func (a *Assembler) warnf(f string, args ...interface{}) {
+	if a.Warn == nil {
+		return
+	}
+	a.Warn.Printf(f, args...)
+}
+
+func (a *Assembler) warn(args ...interface{}) {
+	if a.Warn == nil {
+		return
+	}
+	a.Warn.Print(args...)
+}
+
+func (a *Assembler) New(netFlow, tcpFlow gopacket.Flow) tcpassembly.Stream {
+	s := tcpreader.NewReaderStream()
+	a.created(netFlow, tcpFlow, &s)
+	return &s
+}
+
+func (a *Assembler) created(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderStream) {
+	src, err := NewEndpoint(netFlow.Src(), tcpFlow.Src())
+	if err != nil {
+		s.Close()
+		a.warnf("failed to build source: %s", err)
+		return
+	}
+	dst, err := NewEndpoint(netFlow.Dst(), tcpFlow.Dst())
+	if err != nil {
+		s.Close()
+		a.warnf("failed to build destination: %s", err)
+		return
+	}
+	if a.Created != nil {
+		err := a.Created(src, dst, s)
+		if err != nil {
+			s.Close()
+			a.warnf("failed to create stream: %s", err)
+		}
+	}
+}
+
+func (a *Assembler) Assemble(r io.Reader) error {
+	pr, err := pcapgo.NewReader(r)
+	if err != nil {
+		return err
+	}
+	src := gopacket.NewPacketSource(pr, layers.LayerTypeEthernet)
+	asm := tcpassembly.NewAssembler(tcpassembly.NewStreamPool(a))
+	for {
+		p, err := src.NextPacket()
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			a.warn(err)
+			continue
+		}
+		assemble(asm, p)
+	}
+}
+
+func assemble(asm *tcpassembly.Assembler, p gopacket.Packet) {
 	if p.NetworkLayer() == nil || p.TransportLayer() == nil || p.TransportLayer().LayerType() != layers.LayerTypeTCP {
 		return
 	}

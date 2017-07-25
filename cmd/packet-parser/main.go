@@ -18,7 +18,7 @@ const serverPort = 3306
 var independentParsers = map[string]*parser.Parser{}
 
 // start MySQL packet parser in goroutine with s.
-func streamCreated2(src, dst tcpasm.Endpoint, s io.ReadCloser) error {
+func created(src, dst tcpasm.Endpoint, s io.ReadCloser) error {
 	if src.Port != serverPort && dst.Port != serverPort {
 		return fmt.Errorf("both port not for MySQL: src=%s dst=%s", src, dst)
 	}
@@ -71,9 +71,9 @@ func streamCreated2(src, dst tcpasm.Endpoint, s io.ReadCloser) error {
 
 func main() {
 	flag.Parse()
-	asm := &tcpasm.StreamAssembler{
-		WarnLog: log.New(os.Stderr, "WARN ", log.LstdFlags),
-		Created: streamCreated2,
+	asm := &tcpasm.Assembler{
+		Warn:    log.New(os.Stderr, "WARN ", log.LstdFlags),
+		Created: created,
 	}
 	err := asm.Assemble(os.Stdin)
 	if err != nil {
