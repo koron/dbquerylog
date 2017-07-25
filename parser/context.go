@@ -26,4 +26,6 @@ type Context struct {
 	ResultState ResultState
 	FieldNCurr      uint64
 	FieldNMax       uint64
+
+	Data interface{}
 }

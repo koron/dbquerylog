@@ -255,3 +255,11 @@ func (pa *Parser) String() string {
 	}
 	return fmt.Sprintf("[%d] Detail=%#v lens=%+v", pa.dir, pa.Detail, pa.PktLens)
 }
+
+func (pa *Parser) ContextData() interface{} {
+	return pa.ctx.Data
+}
+
+func (pa *Parser) SetContextData(d interface{}) {
+	pa.ctx.Data = d
+}

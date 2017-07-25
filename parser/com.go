@@ -12,6 +12,10 @@ type QueryPacket struct {
 	Query string
 }
 
+type PreparePacket struct {
+	Query string
+}
+
 func NewCOMPacket(b []byte) (interface{}, error) {
 	if len(b) == 0 {
 		return nil, fmt.Errorf("too short COM packet")
@@ -19,6 +23,8 @@ func NewCOMPacket(b []byte) (interface{}, error) {
 	switch b[0] {
 	case 0x03:
 		return &QueryPacket{Query: string(b[1:])}, nil
+	case 0x16:
+		return &PreparePacket{Query: string(b[1:])}, nil
 	default:
 		// TODO: implement for other commands
 		return &COMPacket{Raw: b}, nil

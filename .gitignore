@@ -4,7 +4,3 @@ tmp/
 
 mysql-packet-sniffer
 mysql-packet-sniffer.exe
-parsepacket
-parsepacket.exe
-parsetcp
-parsetcp.exe
