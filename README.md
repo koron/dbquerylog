@@ -20,3 +20,20 @@ tcpdump: listening on lo, link-type EN10MB (Ethernet), capture size 262144 bytes
 2017/07/26 02:51:45 stream closed for 127.0.0.1:60720
 2017/07/26 02:51:45 stream closed for 127.0.0.1:60720
 ```
+
+## Report format
+
+Report format is based on TSV (tab separated values).
+Each rows represent database queries.
+Each columns are consisted by below:
+
+*   start time
+*   client address (IP address and port)
+*   server address (IP address and port)
+*   username of database
+*   total response size in byte
+*   column number in response
+*   row numbers which updated
+*   elapsed time
+*   query
+*   parameters (available for prepared statement only)
