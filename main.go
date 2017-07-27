@@ -38,22 +38,43 @@ func (c *conn) ID() string {
 
 func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 	switch pkt := pa.Detail.(type) {
+
 	case *parser.ClientHandshakePacket:
 		c.report.Username = pkt.Username
+
 	case *parser.QueryPacket:
 		c.report.StartQuery(pkt.Query)
+
+	case *parser.ResultFieldNumPacket:
+		if c.report.Querying() {
+			c.report.ResponseSize += uint64(len(pa.Body))
+			c.report.ColumnNum= pkt.Num
+		}
+
+	case *parser.ResultFieldPacket:
+		if c.report.Querying() {
+			c.report.ResponseSize += uint64(len(pa.Body))
+		}
+
+	case *parser.ResultRecordPacket:
+		if c.report.Querying() {
+			c.report.ResponseSize += uint64(len(pa.Body))
+			c.report.UpdatedRows++
+		}
+
 	case *parser.EOFPacket:
 		if c.report.Querying() {
+			c.report.ResponseSize += uint64(len(pa.Body))
 			c.finishQuery()
 			return
 		}
-		// TODO:
+
 	case *parser.ResultNonePacket:
 		if c.report.Querying() {
+			c.report.ResponseSize += uint64(len(pa.Body))
 			c.finishQuery()
 			return
 		}
-		// TODO:
 	}
 }
 
@@ -62,13 +83,15 @@ func (c *conn) Closed() {
 }
 
 func (c *conn) finishQuery() {
+	c.report.FinishQuery()
 	err := tsvWrite(c.out,
 		c.report.StartTime.String(),
 		c.report.ClientAddr.String(),
 		c.report.ServerAddr.String(),
 		c.report.Username,
-		strconv.FormatUint(c.report.UpdatedRows, 10),
 		strconv.FormatUint(c.report.ResponseSize, 10),
+		strconv.FormatUint(c.report.ColumnNum, 10),
+		strconv.FormatUint(c.report.UpdatedRows, 10),
 		strconv.FormatInt(int64(c.report.ElapsedTime), 10),
 		c.report.QueryString,
 		c.report.QueryParams,

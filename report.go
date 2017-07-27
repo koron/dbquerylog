@@ -12,8 +12,9 @@ type Report struct {
 	Username   string
 
 	StartTime    time.Time
-	UpdatedRows  uint64
 	ResponseSize uint64
+	ColumnNum    uint64
+	UpdatedRows  uint64
 	ElapsedTime  time.Duration
 	QueryString  string
 	QueryParams  string
@@ -21,8 +22,9 @@ type Report struct {
 
 func (r *Report) Reset() {
 	r.StartTime = time.Time{}
-	r.UpdatedRows = 0
 	r.ResponseSize = 0
+	r.ColumnNum = 0
+	r.UpdatedRows = 0
 	r.ElapsedTime = 0
 	r.QueryString = ""
 	r.QueryParams = ""
