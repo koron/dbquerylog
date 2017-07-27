@@ -12,7 +12,7 @@ type Conn interface {
 	Received(pa *parser.Parser, fromServer bool)
 }
 
-type ConnFactory func(tcpasm.Endpoint) Conn
+type ConnFactory func(client, server tcpasm.Endpoint) Conn
 
 type conn struct {
 	sync.Mutex

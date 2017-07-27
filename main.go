@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"io"
 	"log"
 	"os"
-	"time"
+	"strconv"
 
 	"github.com/koron/mysql-packet-sniffer/mysqlasm"
 	"github.com/koron/mysql-packet-sniffer/parser"
@@ -13,55 +13,72 @@ import (
 )
 
 type conn struct {
-	out  *log.Logger
-	addr tcpasm.Endpoint
+	out io.Writer
+	id  string
 
-	queryString string
-	queryStart  time.Time
+	report *Report
 }
 
-func newConn(addr tcpasm.Endpoint) mysqlasm.Conn {
-	prefix := fmt.Sprintf("%s ", addr.String())
+var warn = log.New(os.Stderr, "", log.LstdFlags)
+
+func newConn(clientAddr, serverAddr tcpasm.Endpoint) mysqlasm.Conn {
 	return &conn{
-		out:  log.New(os.Stdout, prefix, 0),
-		addr: addr,
+		out: os.Stdout,
+		id:  clientAddr.String(),
+		report: &Report{
+			ClientAddr: clientAddr,
+			ServerAddr: serverAddr,
+		},
 	}
 }
 
 func (c *conn) ID() string {
-	return c.addr.String()
+	return c.id
 }
 
 func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 	switch pkt := pa.Detail.(type) {
+	case *parser.ClientHandshakePacket:
+		c.report.Username = pkt.Username
 	case *parser.QueryPacket:
-		c.queryString = pkt.Query
-		c.queryStart = time.Now()
+		c.report.StartQuery(pkt.Query)
 	case *parser.EOFPacket:
-		if c.queryString != "" {
-			c.finishQuery(pa)
+		if c.report.Querying() {
+			c.finishQuery()
 			return
 		}
 		// TODO:
 	case *parser.ResultNonePacket:
-		if c.queryString != "" {
-			c.finishQuery(pa)
+		if c.report.Querying() {
+			c.finishQuery()
 			return
 		}
 		// TODO:
 	}
 }
 
-func (c *conn) finishQuery(pa *parser.Parser) {
-	d := time.Since(c.queryStart)
-	c.out.Printf("query %q finished in %s", c.queryString, d)
-	c.queryString = ""
+func (c *conn) finishQuery() {
+	err := tsvWrite(c.out,
+		c.report.StartTime.String(),
+		c.report.ClientAddr.String(),
+		c.report.ServerAddr.String(),
+		c.report.Username,
+		strconv.FormatUint(c.report.UpdatedRows, 10),
+		strconv.FormatUint(c.report.ResponseSize, 10),
+		strconv.FormatInt(int64(c.report.ElapsedTime), 10),
+		c.report.QueryString,
+		c.report.QueryParams,
+	)
+	if err != nil {
+		warn.Print(err)
+	}
+	c.report.Reset()
 }
 
 func main() {
 	flag.Parse()
 	asm := mysqlasm.New(nil, newConn)
-	asm.Warn = log.New(os.Stderr, "", log.LstdFlags)
+	asm.Warn = warn
 	err := asm.Assemble(os.Stdin)
 	if err != nil {
 		log.Fatal(err)

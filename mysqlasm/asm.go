@@ -45,32 +45,35 @@ func (a *Assembler) created(src, dst tcpasm.Endpoint, r io.ReadCloser) error {
 	}
 
 	var (
-		addr tcpasm.Endpoint
-		pa   *parser.Parser
-		from bool
+		caddr tcpasm.Endpoint
+		saddr tcpasm.Endpoint
+		pa    *parser.Parser
+		from  bool
 	)
 	if src.Port == a.ServerPort {
-		addr = dst
+		caddr = dst
+		saddr = src
 		pa = parser.NewFromServer(r)
 		from = true
 	} else {
-		addr = src
+		caddr = src
+		saddr = dst
 		pa = parser.NewFromClient(r)
 		from = false
 	}
-	c := a.getConn(addr, pa, from)
+	c := a.getConn(caddr, saddr, pa, from)
 	go a.parseLoop(r, pa, from, c)
 
 	return nil
 }
 
-func (a *Assembler) getConn(addr tcpasm.Endpoint, pa *parser.Parser, fromServer bool) *conn {
+func (a *Assembler) getConn(caddr, saddr tcpasm.Endpoint, pa *parser.Parser, fromServer bool) *conn {
 	a.l.Lock()
 	defer a.l.Unlock()
 	if a.conns == nil {
 		a.conns = make(map[string]*conn)
 	}
-	if c, ok := a.conns[addr.String()]; ok {
+	if c, ok := a.conns[caddr.String()]; ok {
 		if c.p0 != nil {
 			pa.ShareContext(c.p0)
 			c.p0 = nil
@@ -78,10 +81,10 @@ func (a *Assembler) getConn(addr tcpasm.Endpoint, pa *parser.Parser, fromServer 
 		return c
 	}
 	c := &conn{
-		c:  a.f(addr),
+		c:  a.f(caddr, saddr),
 		p0: pa,
 	}
-	a.conns[addr.String()] = c
+	a.conns[caddr.String()] = c
 	return c
 }
 
