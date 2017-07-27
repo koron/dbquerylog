@@ -84,12 +84,24 @@ func (a *Assembler) getConn(caddr, saddr tcpasm.Endpoint, pa *parser.Parser, fro
 		c:  a.f(caddr, saddr),
 		p0: pa,
 	}
-	a.conns[caddr.String()] = c
+	a.conns[c.c.ID()] = c
 	return c
 }
 
+func (a *Assembler) deleteConn(c *conn) {
+	a.l.Lock()
+	delete(a.conns, c.c.ID())
+	a.l.Unlock()
+}
+
 func (a *Assembler) parseLoop(r io.ReadCloser, pa *parser.Parser, fromServer bool, c *conn) {
-	defer r.Close()
+	c.incRef()
+	defer func() {
+		r.Close()
+		if c.decRef() {
+			a.deleteConn(c)
+		}
+	}()
 	for {
 		select {
 		case <-a.ctx.Done():
@@ -98,15 +110,15 @@ func (a *Assembler) parseLoop(r io.ReadCloser, pa *parser.Parser, fromServer boo
 		}
 		err := pa.Parse()
 		if err == io.EOF {
-			a.warnf("stream closed for %s", c.c.ID())
+			//a.warnf("stream closed for %s", c.c.ID())
 			return
 		}
 		if err != nil {
 			a.warnf("failed parser for %s: %s", c.c.ID(), err)
+			continue
 		}
 		c.received(pa, fromServer)
 	}
-	// TODO: close conn
 }
 
 func (a *Assembler) Assemble(r io.Reader) error {

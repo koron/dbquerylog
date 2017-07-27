@@ -57,6 +57,10 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 	}
 }
 
+func (c *conn) Closed() {
+	warn.Printf("closed %s", c.id)
+}
+
 func (c *conn) finishQuery() {
 	err := tsvWrite(c.out,
 		c.report.StartTime.String(),
