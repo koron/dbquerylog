@@ -14,6 +14,13 @@ type conn struct {
 	addr tcpasm.Endpoint
 }
 
+func newConn(clientAddr, serverAddr tcpasm.Endpoint) mysqlasm.Conn {
+	log.Printf("connected with %s", clientAddr)
+	return &conn{
+		addr: clientAddr,
+	}
+}
+
 func (c *conn) ID() string {
 	return c.addr.String()
 }
@@ -26,11 +33,8 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 	log.Printf("%s(%s): %s", c.ID(), dir, pa.String())
 }
 
-func newConn(addr tcpasm.Endpoint) mysqlasm.Conn {
-	log.Printf("connected with %s", addr)
-	return &conn{
-		addr: addr,
-	}
+func (c *conn) Closed() {
+	log.Printf("closed %s", c.ID())
 }
 
 func main() {
