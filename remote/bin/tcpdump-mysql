@@ -1,3 +1,3 @@
 #!/bin/sh
 
-exec tcpdump -i lo -s 0 -l -w - "dst port 3306 or src port 3306"
+exec tcpdump -s 0 -l -w - "port 3306"
