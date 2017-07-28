@@ -36,6 +36,9 @@ func test(db *sql.DB) error {
 	if err := test2(db); err != nil {
 		return err
 	}
+	if err := test3(db); err != nil {
+		return err
+	}
 	// TODO:
 	if err := test99(db); err != nil {
 		return err
@@ -88,6 +91,17 @@ func test2(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func test3(db *sql.DB) error {
+	var err error
+	_, err = db.Prepare(
+		`INSERT INTO users (name, password) VALUES (?, ?`)
+	if err == nil {
+		panic("prepare in test3 should be failed")
+	}
+	log.Printf("test3: %s", err)
 	return nil
 }
 

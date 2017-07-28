@@ -48,7 +48,7 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 	case *parser.ResultFieldNumPacket:
 		if c.report.Querying() {
 			c.report.ResponseSize += uint64(len(pa.Body))
-			c.report.ColumnNum= pkt.Num
+			c.report.ColumnNum = pkt.Num
 		}
 
 	case *parser.ResultFieldPacket:
@@ -75,6 +75,9 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 			c.finishQuery()
 			return
 		}
+
+	default:
+		warn.Printf("IGNORED: %#v", pkt)
 	}
 }
 
