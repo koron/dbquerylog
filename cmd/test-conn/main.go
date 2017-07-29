@@ -58,7 +58,7 @@ func test0(db *sql.DB) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("table: %s\n", name)
+		fmt.Printf("test0: table:%s found\n", name)
 	}
 	return nil
 }
@@ -101,7 +101,7 @@ func test3(db *sql.DB) error {
 	if err == nil {
 		panic("prepare in test3 should be failed")
 	}
-	log.Printf("test3: %s", err)
+	fmt.Printf("test3: IGNORED ERROR: %s\n", err)
 	return nil
 }
 
