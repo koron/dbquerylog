@@ -19,9 +19,14 @@ type conn struct {
 	report *Report
 }
 
-var warn = log.New(os.Stderr, "", log.LstdFlags)
+var (
+	warn = log.New(os.Stderr, "[WARN] ", 0)
+	dbg  = log.New(os.Stderr, " [DBG] ", 0)
+)
 
 func newConn(clientAddr, serverAddr tcpasm.Endpoint) mysqlasm.Conn {
+	dbg.Println("")
+	dbg.Printf("connected %s", clientAddr.String())
 	return &conn{
 		out: os.Stdout,
 		id:  clientAddr.String(),
@@ -77,12 +82,17 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 		}
 
 	default:
-		warn.Printf("IGNORED: %#v", pkt)
+		if pkt == nil {
+			dbg.Printf("IGNORED<nil>: first_byte=%02x", pa.Body[0])
+			return
+		}
+		dbg.Printf("IGNORED: %#v", pkt)
 	}
 }
 
 func (c *conn) Closed() {
-	warn.Printf("closed %s", c.id)
+	dbg.Printf("closed %s", c.id)
+	dbg.Println("")
 }
 
 func (c *conn) finishQuery() {

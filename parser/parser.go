@@ -166,10 +166,14 @@ func (pa *Parser) parseServerResultPacket() error {
 	switch pa.ctx.ResultState {
 	case 0:
 		buf := &decbuf{buf: pa.Body}
-		n, err := buf.ReadUintV()
+		p, err := buf.ReadUintV()
 		if err != nil {
 			return err
 		}
+		if p == nil {
+			return nil
+		}
+		n := *p
 		if n == 0 {
 			pkt, err := NewResultNonePacket(buf.buf)
 			if err != nil {
@@ -179,16 +183,16 @@ func (pa *Parser) parseServerResultPacket() error {
 			pa.ctx.ResultState = 0
 			return nil
 		}
-		pa.Detail = &ResultFieldNumPacket{Num: n}
+		pa.Detail = &ResultFieldNumPacket{Num: uint64(n)}
 		pa.ctx.ResultState = Fields
 		pa.ctx.FieldNCurr = 0
-		pa.ctx.FieldNMax = n
+		pa.ctx.FieldNMax = uint64(n)
 		return nil
 
 	case Fields:
 		pkt, err := NewResultFieldPacket(pa.Body)
 		if err != nil {
-			return nil
+			return err
 		}
 		pa.Detail = pkt
 		pa.ctx.FieldNCurr++
@@ -206,7 +210,7 @@ func (pa *Parser) parseServerResultPacket() error {
 		}
 		pkt, err := NewResultRecordPacket(pa.Body, nfields)
 		if err != nil {
-			return nil
+			return err
 		}
 		pa.Detail = pkt
 		return nil
@@ -271,10 +275,11 @@ func (pa *Parser) String() string {
 		if len(pa.Body) > 0 {
 			fb = pa.Body[0]
 		}
-		return fmt.Sprintf("[%d] PktLens=%+v SeqNums=%+v First=%02x",
-			pa.dir, pa.PktLens, pa.SeqNums, fb)
+		return fmt.Sprintf("PktLens=%+v SeqNums=%+v First=%02x",
+			pa.PktLens, pa.SeqNums, fb)
 	}
-	return fmt.Sprintf("[%d] Detail=%#v lens=%+v", pa.dir, pa.Detail, pa.PktLens)
+	return fmt.Sprintf("Detail=%#v PktLens=%+v SeqNums=%+v",
+		pa.Detail, pa.PktLens, pa.SeqNums)
 }
 
 func (pa *Parser) ContextData() interface{} {

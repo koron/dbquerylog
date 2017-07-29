@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"log"
 )
 
 type ResultPacket struct {
@@ -9,11 +10,11 @@ type ResultPacket struct {
 
 type ResultNonePacket struct {
 	ResultPacket
-	AffectedRows uint64
-	InsertID     uint64
+	AffectedRows *UintV
+	InsertID     *UintV
 	ServerStatus uint16
 	WarningCount uint16
-	Message      string
+	Message      *StringV
 }
 
 func NewResultNonePacket(b []byte) (*ResultNonePacket, error) {
@@ -40,17 +41,17 @@ type ResultFieldNumPacket struct {
 
 type ResultFieldPacket struct {
 	ResultPacket
-	Database     string
-	Table        string
-	TableOrigin  string
-	Column       string
-	ColumnOrigin string
+	Database     *StringV
+	Table        *StringV
+	TableOrigin  *StringV
+	Column       *StringV
+	ColumnOrigin *StringV
 	Charset      uint16
 	Length       uint32
 	Type         uint8
 	Flag         uint16
 	DotN         uint8
-	Default      string
+	Default      *StringV
 }
 
 func NewResultFieldPacket(b []byte) (*ResultFieldPacket, error) {
@@ -59,8 +60,10 @@ func NewResultFieldPacket(b []byte) (*ResultFieldPacket, error) {
 		buf = &decbuf{buf: b}
 	)
 	s, _ := buf.ReadStringV()
-	if s != "def" {
-		return nil, fmt.Errorf("unexpected header for result field packet: %s", s)
+	if s == nil || *s != "def" {
+		log.Printf("HERE_A: %#v", b)
+		return nil, fmt.Errorf(
+			"unexpected header for result field packet: %+v", s)
 	}
 	pkt.Database, _ = buf.ReadStringV()
 	pkt.Table, _ = buf.ReadStringV()
@@ -93,13 +96,13 @@ func NewResultFieldPacket(b []byte) (*ResultFieldPacket, error) {
 
 type ResultRecordPacket struct {
 	ResultPacket
-	Columns []string
+	Columns []*StringV
 }
 
 func NewResultRecordPacket(b []byte, nfields int) (*ResultRecordPacket, error) {
 	var (
 		pkt = &ResultRecordPacket{
-			Columns: make([]string, nfields),
+			Columns: make([]*StringV, nfields),
 		}
 		buf = &decbuf{buf: b}
 	)

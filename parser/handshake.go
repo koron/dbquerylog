@@ -34,9 +34,9 @@ func NewServerHandshakePacket(b []byte) (*ServerHandshakePacket, error) {
 type ClientHandshakePacket struct {
 	ClientFlags    uint32
 	MaxPacketSize  uint32
-	Charset        uint64
+	Charset        *UintV
 	Username       string
-	HashedPassword string
+	HashedPassword *StringV
 	Database       string
 }
 

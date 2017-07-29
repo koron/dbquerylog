@@ -5,8 +5,8 @@ import (
 )
 
 type OKPacket struct {
-	AffectedRows uint64
-	InsertID     uint64
+	AffectedRows *UintV
+	InsertID     *UintV
 	Status       uint16
 	WarningCount uint16
 	Message      string

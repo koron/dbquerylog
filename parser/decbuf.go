@@ -80,29 +80,38 @@ func (b *decbuf) readNUint(n int) (uint64, error) {
 	return r, nil
 }
 
-func (b *decbuf) ReadUintV() (uint64, error) {
+func (b *decbuf) ReadUintV() (*UintV, error) {
 	if b.err != nil {
-		return 0, b.err
+		return nil, b.err
 	}
 	if len(b.buf) < 1 {
 		b.err = EOB
-		return 0, b.err
+		return nil, b.err
 	}
 	f := b.buf[0]
 	b.buf = b.buf[1:]
 	if f < 0xFB {
-		return uint64(f), nil
+		n := UintV(f)
+		return &n, nil
 	}
 	switch f {
+	case 0xFB:
+		return nil, nil
 	case 0xFC:
-		return b.readNUint(2)
+		m, err := b.readNUint(2)
+		n := UintV(m)
+		return &n, err
 	case 0xFD:
-		return b.readNUint(3)
+		m, err := b.readNUint(3)
+		n := UintV(m)
+		return &n, err
 	case 0xFE:
-		return b.readNUint(8)
+		m, err := b.readNUint(8)
+		n := UintV(m)
+		return &n, err
 	default:
 		b.err = fmt.Errorf("invalid byte for length-encoded integer: %02x", f)
-		return 0, b.err
+		return nil, b.err
 	}
 }
 
@@ -120,25 +129,29 @@ func (b *decbuf) ReadString() (string, error) {
 	return s, nil
 }
 
-func (b *decbuf) ReadStringV() (string, error) {
+func (b *decbuf) ReadStringV() (*StringV, error) {
 	if b.err != nil {
-		return "", b.err
+		return nil, b.err
 	}
-	n, err := b.ReadUintV()
+	p, err := b.ReadUintV()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+	if p == nil {
+		return nil, nil
+	}
+	n := *p
 	if n > math.MaxInt32 {
 		b.err = fmt.Errorf("too long string: %d", n)
-		return "", b.err
+		return nil, b.err
 	}
 	if len(b.buf) < int(n) {
 		b.err = EOB
-		return "", b.err
+		return nil, b.err
 	}
-	s := string(b.buf[:n])
+	s := StringV(b.buf[:n])
 	b.buf = b.buf[n:]
-	return s, nil
+	return &s, nil
 }
 
 func (b *decbuf) Discard(n int) error {

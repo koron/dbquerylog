@@ -26,6 +26,13 @@ func NewCOMPacket(b []byte) (interface{}, error) {
 		}
 		return pkt, err
 
+	case 0x04:
+		pkt, err := NewFieldListPacket(b)
+		if err != nil {
+			return nil, err
+		}
+		return pkt, err
+
 	case 0x16:
 		pkt, err := NewPrepareQueryPacket(b)
 		if err != nil {
@@ -47,4 +54,26 @@ func NewCOMPacket(b []byte) (interface{}, error) {
 			Raw:  b[1:],
 		}, nil
 	}
+}
+
+type FieldListPacket struct {
+	Table    string
+	Wildcard string
+}
+
+func NewFieldListPacket(b []byte) (*FieldListPacket, error) {
+	var (
+		pkt = &FieldListPacket{}
+		buf = &decbuf{buf: b[1:]}
+	)
+	pkt.Table, _ = buf.ReadString()
+	pkt.Wildcard = string(buf.buf)
+	if buf.err != nil {
+		return nil, buf.err
+	}
+	return pkt, nil
+}
+
+func (pkt *FieldListPacket) CommandType() CommandType {
+	return FieldList
 }
