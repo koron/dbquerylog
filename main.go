@@ -17,6 +17,16 @@ type conn struct {
 	id  string
 
 	report *Report
+
+	preparing *statement
+	prepared  map[uint32]*statement
+}
+
+type statement struct {
+	id         uint32
+	query      string
+	fieldCount uint16
+	paramCount uint16
 }
 
 var (
@@ -34,6 +44,7 @@ func newConn(clientAddr, serverAddr tcpasm.Endpoint) mysqlasm.Conn {
 			ClientAddr: clientAddr,
 			ServerAddr: serverAddr,
 		},
+		prepared: map[uint32]*statement{},
 	}
 }
 
@@ -46,6 +57,9 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 
 	case *parser.ClientHandshakePacket:
 		c.report.Username = pkt.Username
+
+	case *parser.ServerHandshakePacket:
+		// nothing to do.
 
 	case *parser.QueryPacket:
 		c.report.StartQuery(pkt.Query)
@@ -81,6 +95,30 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 			return
 		}
 
+	case *parser.PrepareQueryPacket:
+		c.preparing = &statement{
+			query: pkt.Query,
+		}
+
+	case *parser.PrepareResultPacket:
+		if c.preparing == nil {
+			return
+		}
+		c.preparing.id = pkt.StatementID
+		c.preparing.fieldCount = pkt.FieldCount
+		c.preparing.paramCount = pkt.ParameterCount
+		c.addStatement(c.preparing)
+		c.preparing = nil
+
+	case *parser.OKPacket:
+		// nothing to do yet.
+
+	case *parser.ErrorPacket:
+		if c.preparing != nil {
+			c.preparing = nil
+		}
+		warn.Printf("ERROR: %s (%d)", pkt.Message, pkt.Number)
+
 	default:
 		if pkt == nil {
 			dbg.Printf("IGNORED<nil>: first_byte=%02x", pa.Body[0])
@@ -110,9 +148,20 @@ func (c *conn) finishQuery() {
 		c.report.QueryParams,
 	)
 	if err != nil {
-		warn.Print(err)
+		warn.Printf("failed to output report: %s", err)
 	}
 	c.report.Reset()
+}
+
+func (c *conn) addStatement(s *statement) {
+	t, ok := c.prepared[s.id]
+	if ok {
+		warn.Printf("duplicated statement %d: old=%q new=%q",
+			s.id, t.query, s.query)
+		return
+	}
+	c.prepared[s.id] = s
+	dbg.Printf("prepared: %+v", s)
 }
 
 func main() {
