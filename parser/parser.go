@@ -127,15 +127,35 @@ func (pa *Parser) parseServerPacket() error {
 			break
 		}
 		switch pa.ctx.LastCommand {
+
 		case Prepare:
 			pkt, err := NewPrepareResultPacket(pa.Body)
 			if err != nil {
 				return err
 			}
 			pa.Detail = pkt
+			if pkt.ParameterCount > 0 {
+				if pkt.FieldCount > 0 {
+					pa.ctx.ResultState = PrepareParamsAndColumns
+				} else {
+					pa.ctx.ResultState = PrepareParams
+				}
+			} else {
+				if pkt.FieldCount > 0 {
+					pa.ctx.ResultState = PrepareColumns
+				} else {
+					pa.ctx.ResultState = 0
+				}
+			}
 			return nil
+
 		case Query, Execute, Reset:
-			return pa.parseServerResultPacket()
+			err := pa.parseServerResultPacket()
+			if err != nil {
+				return err
+			}
+			return nil
+
 		default:
 			// TODO:
 			pa.Detail = nil
@@ -148,9 +168,17 @@ func (pa *Parser) parseServerPacket() error {
 			return err
 		}
 		pa.Detail = pkt
+		switch pa.ctx.ResultState {
+		case PrepareParamsAndColumns:
+			pa.ctx.ResultState = PrepareColumns
+			return nil
+		case PrepareParams, PrepareColumns:
+			pa.ctx.ResultState = 0
+			return nil
+		}
 		if !pa.ctx.IsClientDeprecateEOF() && pa.ctx.ResultState == Fields {
 			pa.ctx.ResultState = Records
-			break
+			return nil
 		}
 		pa.ctx.ResultState = 0
 
@@ -162,7 +190,11 @@ func (pa *Parser) parseServerPacket() error {
 		pa.Detail = pkt
 	default:
 		// FIXME: any specific procedure?
-		return pa.parseServerResultPacket()
+		err := pa.parseServerResultPacket()
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 	return nil
 }
@@ -194,7 +226,7 @@ func (pa *Parser) parseServerResultPacket() error {
 		pa.ctx.FieldNMax = uint64(n)
 		return nil
 
-	case Fields:
+	case Fields, PrepareParamsAndColumns, PrepareParams, PrepareColumns:
 		pkt, err := NewResultFieldPacket(pa.Body)
 		if err != nil {
 			return err

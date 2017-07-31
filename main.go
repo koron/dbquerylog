@@ -65,6 +65,13 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 	case *parser.QueryPacket:
 		c.report.StartQuery(pkt.Query)
 
+	case *parser.ExecuteQueryPacket:
+		s, ok := c.getStatement(pkt.StatementID)
+		if !ok {
+			return
+		}
+		c.report.StartQuery(s.query)
+
 	case *parser.ResultFieldNumPacket:
 		if c.report.Querying() {
 			c.report.ResponseSize += uint64(len(pa.Body))
@@ -86,7 +93,7 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 		c.removeStatement(pkt.StatementID)
 
 	case *parser.EOFPacket:
-		if c.report.Querying() {
+		if c.report.Querying() && pa.Context().ResultState == 0 {
 			c.report.ResponseSize += uint64(len(pa.Body))
 			c.finishQuery()
 			return
@@ -169,6 +176,15 @@ func (c *conn) addStatement(s *statement) {
 	}
 	c.prepared[s.id] = s
 	dbg.Printf("PREPARE: %+v", s)
+}
+
+func (c *conn) getStatement(id uint32) (*statement, bool) {
+	s, ok := c.prepared[id]
+	if !ok {
+		warn.Printf("statement not found: %d", id)
+		return nil, false
+	}
+	return s, true
 }
 
 func (c *conn) removeStatement(id uint32) {

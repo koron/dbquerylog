@@ -17,6 +17,9 @@ type ResultState int
 const (
 	Fields ResultState = iota + 1
 	Records
+	PrepareParamsAndColumns
+	PrepareParams
+	PrepareColumns
 )
 
 type CommandType int
@@ -57,6 +60,10 @@ type Context struct {
 	ResultState ResultState
 	FieldNCurr  uint64
 	FieldNMax   uint64
+
+	// Prepare statements
+	PrepareNumParams  uint16
+	PrepareNumColumns uint16
 
 	// Client status
 	LastCommand CommandType
