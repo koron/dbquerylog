@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -31,7 +32,7 @@ type statement struct {
 
 var (
 	warn = log.New(os.Stderr, "[WARN] ", 0)
-	dbg  = log.New(os.Stderr, " [DBG] ", 0)
+	dbg  *log.Logger
 )
 
 func newConn(clientAddr, serverAddr tcpasm.Endpoint) mysqlasm.Conn {
@@ -81,6 +82,9 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 			c.report.UpdatedRows++
 		}
 
+	case *parser.CloseQueryPacket:
+		c.removeStatement(pkt.StatementID)
+
 	case *parser.EOFPacket:
 		if c.report.Querying() {
 			c.report.ResponseSize += uint64(len(pa.Body))
@@ -118,6 +122,9 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 			c.preparing = nil
 		}
 		warn.Printf("ERROR: %s (%d)", pkt.Message, pkt.Number)
+
+	case *parser.QuitPacket:
+		dbg.Printf("QUIT: by command")
 
 	default:
 		if pkt == nil {
@@ -161,11 +168,32 @@ func (c *conn) addStatement(s *statement) {
 		return
 	}
 	c.prepared[s.id] = s
-	dbg.Printf("prepared: %+v", s)
+	dbg.Printf("PREPARE: %+v", s)
 }
 
+func (c *conn) removeStatement(id uint32) {
+	s, ok := c.prepared[id]
+	if !ok {
+		warn.Printf("unknown statement %d", id)
+		return
+	}
+	delete(c.prepared, id)
+	dbg.Printf("DEALLOCATE: %+v", s)
+}
+
+var (
+	debugFlag bool
+)
+
 func main() {
+	flag.BoolVar(&debugFlag, "debug", false, "enable debug log")
 	flag.Parse()
+	if debugFlag {
+		dbg = log.New(os.Stderr, " [DBG] ", 0)
+	} else {
+		dbg = log.New(ioutil.Discard, "", 0)
+	}
+
 	asm := mysqlasm.New(nil, newConn)
 	asm.Warn = warn
 	err := asm.Assemble(os.Stdin)

@@ -84,3 +84,19 @@ func NewExecuteQueryPacket(b []byte) (*ExecuteQueryPacket, error) {
 func (p *ExecuteQueryPacket) CommandType() CommandType {
 	return Execute
 }
+
+type CloseQueryPacket struct {
+	StatementID uint32
+}
+
+func NewCloseQueryPacket(b []byte) (*CloseQueryPacket, error) {
+	var (
+		pkt = &CloseQueryPacket{}
+		buf = &decbuf{buf: b[1:]}
+	)
+	pkt.StatementID, _ = buf.ReadUint32()
+	if buf.err != nil {
+		return nil, buf.err
+	}
+	return pkt, nil
+}

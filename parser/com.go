@@ -19,6 +19,9 @@ func NewCOMPacket(b []byte) (interface{}, error) {
 	}
 	switch b[0] {
 
+	case Quit:
+		return &QuitPacket{}, nil
+
 	case 0x03:
 		pkt, err := NewQueryPacket(b)
 		if err != nil {
@@ -47,6 +50,13 @@ func NewCOMPacket(b []byte) (interface{}, error) {
 		}
 		return pkt, nil
 
+	case Close:
+		pkt, err := NewCloseQueryPacket(b)
+		if err != nil {
+			return nil, err
+		}
+		return pkt, nil
+
 	default:
 		// TODO: implement for other commands
 		return &COMPacket{
@@ -54,6 +64,12 @@ func NewCOMPacket(b []byte) (interface{}, error) {
 			Raw:  b[1:],
 		}, nil
 	}
+}
+
+type QuitPacket struct{}
+
+func (pkt *QuitPacket) CommandType() CommandType {
+	return Quit
 }
 
 type FieldListPacket struct {
