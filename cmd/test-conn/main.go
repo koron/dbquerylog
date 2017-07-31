@@ -10,6 +10,7 @@ import (
 
 var (
 	stInsert *sql.Stmt
+	stSelect *sql.Stmt
 	stUpdate *sql.Stmt
 	stDelete *sql.Stmt
 )
@@ -37,6 +38,12 @@ func test(db *sql.DB) error {
 		return err
 	}
 	if err := test3(db); err != nil {
+		return err
+	}
+	if err := test4(db); err != nil {
+		return err
+	}
+	if err := test5(db); err != nil {
 		return err
 	}
 	// TODO:
@@ -82,6 +89,10 @@ func test2(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
+	stSelect, err = db.Prepare(`SELECT * FROM users WHERE name LIKE ?`)
+	if err != nil {
+		return err
+	}
 	stUpdate, err = db.Prepare(
 		`UPDATE users SET name = ?, password = ? WHERE id = ?`)
 	if err != nil {
@@ -105,12 +116,58 @@ func test3(db *sql.DB) error {
 	return nil
 }
 
+func test4(db *sql.DB) error {
+	insert := func(u, p string) error {
+		r, err := stInsert.Exec(u, p)
+		if err != nil {
+			return err
+		}
+		id, _ := r.LastInsertId()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("test4: inserted %q as %d\n", u, id)
+		return nil
+	}
+	if err := insert("foo", "pass1234"); err != nil {
+		return err
+	}
+	if err := insert("baz", "pass1234"); err != nil {
+		return err
+	}
+	if err := insert("bar", "pass1234"); err != nil {
+		return err
+	}
+	if err := insert("user001", "pass1234"); err != nil {
+		return err
+	}
+	if err := insert("user002", "pass1234"); err != nil {
+		return err
+	}
+	if err := insert("user003", "pass1234"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func test5(db *sql.DB) error {
+	rows, err := stSelect.Query("user%")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	return nil
+}
+
 func test99(db *sql.DB) error {
 	if stDelete != nil {
 		stDelete.Close()
 	}
 	if stUpdate != nil {
 		stUpdate.Close()
+	}
+	if stSelect != nil {
+		stSelect.Close()
 	}
 	if stInsert != nil {
 		stInsert.Close()
