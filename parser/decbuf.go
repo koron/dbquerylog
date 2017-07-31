@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 )
 
@@ -14,6 +15,20 @@ type decbuf struct {
 }
 
 var EOB = errors.New("not enough buffer")
+
+func (b *decbuf) Read(p []byte) (int, error) {
+	n, m := len(p), len(b.buf)
+	if n > m {
+		n = m
+	}
+	copy(p[:n], b.buf[:n])
+	b.buf = b.buf[n:]
+	if n < len(p) {
+		b.err = io.EOF
+		return n, b.err
+	}
+	return n, nil
+}
 
 func (b *decbuf) ReadUint8() (uint8, error) {
 	if b.err != nil {

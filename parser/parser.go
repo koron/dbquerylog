@@ -39,7 +39,7 @@ func NewFromServer(r io.Reader) *Parser {
 	return &Parser{
 		r:   bufio.NewReader(r),
 		dir: fromServer,
-		ctx: new(Context),
+		ctx: newContext(),
 	}
 }
 
@@ -48,7 +48,7 @@ func NewFromClient(r io.Reader) *Parser {
 	return &Parser{
 		r:   bufio.NewReader(r),
 		dir: fromClient,
-		ctx: new(Context),
+		ctx: newContext(),
 	}
 }
 
@@ -147,6 +147,11 @@ func (pa *Parser) parseServerPacket() error {
 					pa.ctx.ResultState = 0
 				}
 			}
+			pa.ctx.addStmt(Stmt{
+				ID:         pkt.StatementID,
+				NumParams:  pkt.ParameterCount,
+				NumColumns: pkt.FieldCount,
+			})
 			return nil
 
 		case Query, Execute, Reset:
@@ -282,7 +287,7 @@ func (pa *Parser) parseClientPacket() error {
 		}
 		pa.Detail = pkt
 	default:
-		pkt, err := NewCOMPacket(pa.Body)
+		pkt, err := NewCOMPacket(pa.Body, pa.ctx)
 		if err != nil {
 			return err
 		}

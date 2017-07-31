@@ -70,7 +70,7 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 		if !ok {
 			return
 		}
-		c.report.StartQuery(s.query)
+		c.report.StartQuery(s.query, pkt.Parameters...)
 
 	case *parser.ResultFieldNumPacket:
 		if c.report.Querying() {

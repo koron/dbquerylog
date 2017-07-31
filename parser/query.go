@@ -59,9 +59,11 @@ func NewPrepareResultPacket(b []byte) (*PrepareResultPacket, error) {
 type ExecuteQueryPacket struct {
 	StatementID uint32
 	CursorType  uint8
+	Types       []FieldType
+	Parameters  []interface{}
 }
 
-func NewExecuteQueryPacket(b []byte) (*ExecuteQueryPacket, error) {
+func NewExecuteQueryPacket(b []byte, ctx *Context) (*ExecuteQueryPacket, error) {
 	// skip first byte, caller must check it.
 	var (
 		pkt = &ExecuteQueryPacket{}
@@ -70,6 +72,10 @@ func NewExecuteQueryPacket(b []byte) (*ExecuteQueryPacket, error) {
 	pkt.StatementID, _ = buf.ReadUint32()
 	pkt.CursorType, _ = buf.ReadUint8()
 	n1, _ := buf.ReadUint32()
+	err := pkt.readParams(buf, ctx)
+	if err != nil {
+		return nil, err
+	}
 	if buf.err != nil {
 		return nil, buf.err
 	}
@@ -77,8 +83,62 @@ func NewExecuteQueryPacket(b []byte) (*ExecuteQueryPacket, error) {
 		return nil, fmt.Errorf(
 			"unexpected first spacer for exec_query packet: %d", n1)
 	}
-	// TODO: parse other fields
 	return pkt, nil
+}
+
+func (p *ExecuteQueryPacket) readParams(buf *decbuf, ctx *Context) error {
+	if buf.err != nil {
+		return buf.err
+	}
+	st, ok := ctx.PreparedStmts[p.StatementID]
+	if !ok {
+		return fmt.Errorf("statement not found: %d", p.StatementID)
+	}
+	// read and parse bitmap.
+	var bm *bitmap
+	if st.NumParams > 0 {
+		b := make([]byte, (st.NumParams+7)/8)
+		_, err := buf.Read(b)
+		if err != nil {
+			return err
+		}
+		bm = &bitmap{b: b, m: st.NumParams}
+	}
+	sp, _ := buf.ReadUint8()
+	if sp != 1 {
+		return fmt.Errorf(
+			"unexpected 2nd parser for exec_query packet: %d", sp)
+	}
+	if st.NumParams == 0 {
+		return nil
+	}
+	types := make([]FieldType, st.NumParams)
+	// read and parse parameter types
+	for i := uint16(0); i < st.NumParams; i++ {
+		t, err := buf.ReadUint16()
+		if err != nil {
+			return err
+		}
+		types[i] = FieldType(t)
+	}
+	p.Types = types
+	// read and parse parameter values
+	values := make([]interface{}, 0, st.NumParams)
+	for i := uint16(0); i < st.NumParams; i++ {
+		if bm.get(i) {
+			values = append(values, fvNULL)
+			continue
+		}
+		var t FieldType
+		t, types = types[0], types[1:]
+		v, err := t.readValue(buf)
+		if err != nil {
+			return err
+		}
+		values = append(values, v)
+	}
+	p.Parameters = values
+	return nil
 }
 
 func (p *ExecuteQueryPacket) CommandType() CommandType {

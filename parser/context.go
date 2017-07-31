@@ -62,8 +62,7 @@ type Context struct {
 	FieldNMax   uint64
 
 	// Prepare statements
-	PrepareNumParams  uint16
-	PrepareNumColumns uint16
+	PreparedStmts map[uint32]Stmt
 
 	// Client status
 	LastCommand CommandType
@@ -71,6 +70,22 @@ type Context struct {
 	Data interface{}
 }
 
+func newContext() *Context {
+	return &Context{
+		PreparedStmts: map[uint32]Stmt{},
+	}
+}
+
 func (ctx *Context) IsClientDeprecateEOF() bool {
 	return ctx.ClientFlags&ClientDeprecateEOF != 0
+}
+
+func (ctx *Context) addStmt(st Stmt) {
+	ctx.PreparedStmts[st.ID] = st
+}
+
+type Stmt struct {
+	ID         uint32
+	NumParams  uint16
+	NumColumns uint16
 }

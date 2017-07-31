@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
 	"time"
 
 	"github.com/koron/mysql-packet-sniffer/tcpasm"
@@ -30,9 +32,19 @@ func (r *Report) Reset() {
 	r.QueryParams = ""
 }
 
-func (r *Report) StartQuery(s string) {
+func (r *Report) StartQuery(s string, args ...interface{}) {
 	r.StartTime = time.Now()
 	r.QueryString = s
+	if len(args) > 0 {
+		b := new(bytes.Buffer)
+		for i, arg := range args {
+			if i != 0 {
+				b.WriteString(", ")
+			}
+			fmt.Fprintf(b, "%#v", arg)
+		}
+		r.QueryParams = b.String()
+	}
 }
 
 func (r *Report) Querying() bool {

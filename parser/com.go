@@ -13,7 +13,7 @@ func (p *COMPacket) CommandType() CommandType {
 	return p.Type
 }
 
-func NewCOMPacket(b []byte) (interface{}, error) {
+func NewCOMPacket(b []byte, ctx *Context) (interface{}, error) {
 	if len(b) == 0 {
 		return nil, fmt.Errorf("too short COM packet")
 	}
@@ -44,7 +44,7 @@ func NewCOMPacket(b []byte) (interface{}, error) {
 		return pkt, nil
 
 	case 0x17:
-		pkt, err := NewExecuteQueryPacket(b)
+		pkt, err := NewExecuteQueryPacket(b, ctx)
 		if err != nil {
 			return nil, err
 		}
