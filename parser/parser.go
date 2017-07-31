@@ -148,7 +148,12 @@ func (pa *Parser) parseServerPacket() error {
 			return err
 		}
 		pa.Detail = pkt
+		if !pa.ctx.IsClientDeprecateEOF() && pa.ctx.ResultState == Fields {
+			pa.ctx.ResultState = Records
+			break
+		}
 		pa.ctx.ResultState = 0
+
 	case 0xff:
 		pkt, err := NewErrorPacket(pa.Body)
 		if err != nil {
@@ -196,7 +201,7 @@ func (pa *Parser) parseServerResultPacket() error {
 		}
 		pa.Detail = pkt
 		pa.ctx.FieldNCurr++
-		if pa.ctx.FieldNCurr >= pa.ctx.FieldNMax {
+		if pa.ctx.IsClientDeprecateEOF() && pa.ctx.FieldNCurr >= pa.ctx.FieldNMax {
 			pa.ctx.ResultState = Records
 		}
 		return nil
@@ -228,6 +233,7 @@ func (pa *Parser) parseClientPacket() error {
 		if err != nil {
 			return err
 		}
+		pa.ctx.ClientFlags = pkt.ClientFlags
 		pa.ctx.State = Auth
 		pa.Detail = pkt
 	case AuthResend:

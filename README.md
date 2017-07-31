@@ -33,7 +33,7 @@ Each columns are consisted by below:
 *   username of database
 *   total response size in byte
 *   column number in response
-*   row numbers which updated
+*   row numbers which responded or updated
 *   elapsed time
 *   query
 *   parameters (available for prepared statement only)

@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"log"
 )
 
 type ResultPacket struct {
@@ -61,7 +60,6 @@ func NewResultFieldPacket(b []byte) (*ResultFieldPacket, error) {
 	)
 	s, _ := buf.ReadStringV()
 	if s == nil || *s != "def" {
-		log.Printf("HERE_A: %#v", b)
 		return nil, fmt.Errorf(
 			"unexpected header for result field packet: %+v", s)
 	}

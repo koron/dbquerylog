@@ -32,7 +32,7 @@ func NewServerHandshakePacket(b []byte) (*ServerHandshakePacket, error) {
 }
 
 type ClientHandshakePacket struct {
-	ClientFlags    uint32
+	ClientFlags    ClientFlags
 	MaxPacketSize  uint32
 	Charset        *UintV
 	Username       string
@@ -45,7 +45,8 @@ func NewClientHandshakePacket(b []byte) (*ClientHandshakePacket, error) {
 		pkt = &ClientHandshakePacket{}
 		buf = &decbuf{buf: b}
 	)
-	pkt.ClientFlags, _ = buf.ReadUint32()
+	cflags, _ := buf.ReadUint32()
+	pkt.ClientFlags = ClientFlags(cflags)
 	pkt.MaxPacketSize, _ = buf.ReadUint32()
 	pkt.Charset, _ = buf.ReadUintV()
 	buf.Discard(23)

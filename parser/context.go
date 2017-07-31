@@ -49,6 +49,8 @@ type Command interface {
 
 // Context represents the context for a connection.
 type Context struct {
+	ClientFlags ClientFlags
+
 	State State
 
 	// Server status
@@ -60,4 +62,8 @@ type Context struct {
 	LastCommand CommandType
 
 	Data interface{}
+}
+
+func (ctx *Context) IsClientDeprecateEOF() bool {
+	return ctx.ClientFlags&ClientDeprecateEOF != 0
 }
