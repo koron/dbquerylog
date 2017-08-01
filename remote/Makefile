@@ -1,6 +1,9 @@
 build: packet-parser mysql-packet-sniffer
 
 run: mysql-packet-sniffer
+	sudo ./bin/tcpdump-mysql | ./mysql-packet-sniffer
+
+run-debug: mysql-packet-sniffer
 	sudo ./bin/tcpdump-mysql | ./mysql-packet-sniffer -debug
 
 run-parser: packet-parser
