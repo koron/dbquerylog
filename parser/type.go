@@ -45,7 +45,7 @@ func (rv fieldValue) GoString() string {
 
 const (
 	fvNULL = fieldValue("NULL")
-	fvNA   = fieldValue("N/A")
+	fvNA   = fieldValue("<N/A>")
 )
 
 func (ft FieldType) readValue(b *decbuf) (interface{}, error) {
@@ -117,7 +117,7 @@ func (ft FieldType) readValue(b *decbuf) (interface{}, error) {
 		if v == nil {
 			return fvNULL, nil
 		}
-		// TODO: parse time
+		// TODO: parse as time
 		return *v, nil
 
 	default:

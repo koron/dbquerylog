@@ -133,7 +133,8 @@ func (p *ExecuteQueryPacket) readParams(buf *decbuf, ctx *Context) error {
 		t, types = types[0], types[1:]
 		v, err := t.readValue(buf)
 		if err != nil {
-			return err
+			values = append(values, fieldValue(fmt.Sprintf("<ERR:%s>", err)))
+			break
 		}
 		values = append(values, v)
 	}
