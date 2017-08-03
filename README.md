@@ -33,13 +33,15 @@ Report format is based on TSV (tab separated values).
 Each rows represent database queries.
 Each columns are consisted by below:
 
-*   start time
+*   start time (in RFC3339Nano format)
+*   start time (in unix nanoseconds)
 *   client address (IP address and port)
 *   server address (IP address and port)
-*   username of database
+*   username
+*   database name
 *   total response size in byte
-*   column number in response
-*   row numbers which responded or updated
-*   elapsed time
+*   num of columns in response
+*   num of rows which responded or updated
+*   elapsed time (nanosecond)
 *   query
 *   parameters (available for prepared statement only)

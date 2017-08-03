@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/koron/mysql-packet-sniffer/mysqlasm"
 	"github.com/koron/mysql-packet-sniffer/parser"
@@ -58,6 +59,7 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 
 	case *parser.ClientHandshakePacket:
 		c.report.Username = pkt.Username
+		c.report.Database = pkt.Database
 
 	case *parser.ServerHandshakePacket:
 		// nothing to do.
@@ -150,10 +152,12 @@ func (c *conn) Closed() {
 func (c *conn) finishQuery() {
 	c.report.FinishQuery()
 	err := tsvWrite(c.out,
-		c.report.StartTime.String(),
+		c.report.StartTime.Format(time.RFC3339Nano),
+		strconv.FormatInt(c.report.StartTime.UnixNano(), 10),
 		c.report.ClientAddr.String(),
 		c.report.ServerAddr.String(),
 		c.report.Username,
+		c.report.Database,
 		strconv.FormatUint(c.report.ResponseSize, 10),
 		strconv.FormatUint(c.report.ColumnNum, 10),
 		strconv.FormatUint(c.report.UpdatedRows, 10),

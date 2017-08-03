@@ -12,6 +12,7 @@ type Report struct {
 	ClientAddr tcpasm.Endpoint
 	ServerAddr tcpasm.Endpoint
 	Username   string
+	Database   string
 
 	StartTime    time.Time
 	ResponseSize uint64
