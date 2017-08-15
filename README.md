@@ -1,16 +1,9 @@
-# MySQL Packets Sniffer
+# DB (MySQL) query logger
 
 How to use.
 
-    $ vagrant up
-    $ GOOS=linux go build parsepacket.go
-    $ vagrant ssh
-    $ sudo ./bin/tcpdump-mysql | /vagrant/parsepacket
-
-## Example
-
 ```console
-$ go install github.com/koron/dbquerylog
+$ go get -u github.com/koron/dbquerylog
 $ sudo tcpdump -s 0 -l -w - "port 3306" | dbquerylog
 tcpdump: listening on lo, link-type EN10MB (Ethernet), capture size 262144 bytes
 2017-08-01 12:50:11.700641772 +0000 UTC 10.0.2.2:41861  10.0.2.15:3306  vagrant 57      1       1       15167   SELECT @@max_allowed_packet
