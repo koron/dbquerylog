@@ -1,18 +1,18 @@
-build: packet-parser mysql-packet-sniffer
+build: packet-parser dbquerylog
 
-run: mysql-packet-sniffer
-	sudo ./bin/tcpdump-mysql | ./mysql-packet-sniffer
+run: dbquerylog
+	sudo ./bin/tcpdump-mysql | ./dbquerylog
 
-run-debug: mysql-packet-sniffer
-	sudo ./bin/tcpdump-mysql | ./mysql-packet-sniffer -debug
+run-debug: dbquerylog
+	sudo ./bin/tcpdump-mysql | ./dbquerylog -debug
 
 run-parser: packet-parser
 	sudo ./bin/tcpdump-mysql | ./packet-parser
 
-mysql-packet-sniffer:
-	go build github.com/koron/mysql-packet-sniffer
+dbquerylog:
+	go build github.com/koron/dbquerylog
 
 packet-parser:
-	go build github.com/koron/mysql-packet-sniffer/cmd/packet-parser
+	go build github.com/koron/dbquerylog/cmd/packet-parser
 
-.PHONY: mysql-packet-sniffer packet-parser
+.PHONY: dbquerylog packet-parser

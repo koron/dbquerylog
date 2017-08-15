@@ -10,8 +10,8 @@ How to use.
 ## Example
 
 ```console
-$ go install github.com/koron/mysql-packet-sniffer
-$ sudo tcpdump -s 0 -l -w - "port 3306" | mysql-packet-sniffer
+$ go install github.com/koron/dbquerylog
+$ sudo tcpdump -s 0 -l -w - "port 3306" | dbquerylog
 tcpdump: listening on lo, link-type EN10MB (Ethernet), capture size 262144 bytes
 2017-08-01 12:50:11.700641772 +0000 UTC 10.0.2.2:41861  10.0.2.15:3306  vagrant 57      1       1       15167   SELECT @@max_allowed_packet
 2017-08-01 12:50:11.700699346 +0000 UTC 10.0.2.2:41861  10.0.2.15:3306  vagrant 108     1       2       7495    SHOW DATABASES

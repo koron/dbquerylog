@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/koron/mysql-packet-sniffer/tcpasm"
+	"github.com/koron/dbquerylog/tcpasm"
 )
 
 type Report struct {

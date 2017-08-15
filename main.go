@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/koron/mysql-packet-sniffer/mysqlasm"
-	"github.com/koron/mysql-packet-sniffer/parser"
-	"github.com/koron/mysql-packet-sniffer/tcpasm"
+	"github.com/koron/dbquerylog/mysqlasm"
+	"github.com/koron/dbquerylog/parser"
+	"github.com/koron/dbquerylog/tcpasm"
 )
 
 type conn struct {

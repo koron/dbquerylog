@@ -56,8 +56,8 @@ cd /home/vagrant
 export PATH="$PATH:/usr/local/go/bin"
 mkdir -p go/src/github.com/koron
 cd go/src/github.com/koron
-ln -s /vagrant mysql-packet-sniffer
-cd mysql-packet-sniffer
+ln -s /vagrant dbquerylog
+cd dbquerylog
 go get -v ./...
 )
 

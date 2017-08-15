@@ -2,5 +2,5 @@
 tags
 tmp/
 
-mysql-packet-sniffer
-mysql-packet-sniffer.exe
+dbquerylog
+dbquerylog.exe
