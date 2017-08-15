@@ -1,6 +1,9 @@
 package parser
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 type FieldType uint16
 
@@ -96,8 +99,7 @@ func (ft FieldType) readValue(b *decbuf) (interface{}, error) {
 		return math.Float64frombits(v), nil
 
 	case FieldTypeDecimal, FieldTypeNewDecimal, FieldTypeVarChar,
-		FieldTypeBit, FieldTypeEnum, FieldTypeSet, FieldTypeTinyBLOB,
-		FieldTypeMediumBLOB, FieldTypeLongBLOB, FieldTypeBLOB,
+		FieldTypeBit, FieldTypeEnum, FieldTypeSet,
 		FieldTypeVarString, FieldTypeString, FieldTypeGeometry, FieldTypeJSON:
 		v, err := b.ReadStringV()
 		if err != nil {
@@ -107,6 +109,17 @@ func (ft FieldType) readValue(b *decbuf) (interface{}, error) {
 			return fvNULL, nil
 		}
 		return *v, nil
+
+	case FieldTypeTinyBLOB, FieldTypeMediumBLOB, FieldTypeLongBLOB,
+		FieldTypeBLOB:
+		p, err := b.DiscardV()
+		if err != nil {
+			return nil, err
+		}
+		if p == nil {
+			return fvNULL, nil
+		}
+		return fieldValue(fmt.Sprintf("<BLOB:%d>", *p)), nil
 
 	case FieldTypeDate, FieldTypeNewDate, FieldTypeTime, FieldTypeTimestamp,
 		FieldTypeDateTime:

@@ -180,3 +180,22 @@ func (b *decbuf) Discard(n int) error {
 	b.buf = b.buf[n:]
 	return nil
 }
+
+func (b *decbuf) DiscardV() (*UintV, error) {
+	if b.err != nil {
+		return nil, b.err
+	}
+	p, err := b.ReadUintV()
+	if err != nil {
+		return nil, err
+	}
+	if p == nil {
+		return nil, nil
+	}
+	n := *p
+	if n > math.MaxInt32 {
+		b.err = fmt.Errorf("too long blob: %d", n)
+		return nil, b.err
+	}
+	return p, b.Discard(int(n))
+}
