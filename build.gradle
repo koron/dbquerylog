@@ -1,0 +1,14 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+version = '0.1'
+mainClassName = 'dbquerylog.Basic'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile 'junit:junit:4.+'
+    compile 'mysql:mysql-connector-java:6.0.+'
+}
