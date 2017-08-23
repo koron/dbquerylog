@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'application'
 
 version = '0.1'
-mainClassName = 'dbquerylog.Blob'
+mainClassName = 'dbquerylog.DateTest'
 
 repositories {
     mavenCentral()
