@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"io"
-	"strings"
-	"sync"
+	"strconv"
 )
 
 func tsvWrite(w io.Writer, values ...string) error {
@@ -27,33 +25,7 @@ func tsvWrite(w io.Writer, values ...string) error {
 	return err
 }
 
-var tsvPool = &sync.Pool{
-	New: func() interface{} {
-		return new(bytes.Buffer)
-	},
-}
-
 func tsvEscape(s string) string {
-	if strings.IndexAny(s, "\t\n\r\\") == -1 {
-		return s
-	}
-	b := tsvPool.Get().(*bytes.Buffer)
-	for _, r := range s {
-		switch r {
-		case '\t':
-			b.WriteString(`\t`)
-		case '\n':
-			b.WriteString(`\n`)
-		case '\r':
-			b.WriteString(`\r`)
-		case '\\':
-			b.WriteString(`\\`)
-		default:
-			b.WriteRune(r)
-		}
-	}
-	t := b.String()
-	b.Reset()
-	tsvPool.Put(b)
-	return t
+	s = strconv.Quote(s)
+	return s[1 : len(s)-1]
 }
