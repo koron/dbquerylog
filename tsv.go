@@ -25,6 +25,15 @@ func tsvWrite(w io.Writer, values ...string) error {
 	return err
 }
 
+var tsvValueMaxlen int = 0
+
+func tsvLimit(s string) string {
+	if tsvValueMaxlen <= 0 || len(s) < tsvValueMaxlen {
+		return s
+	}
+	return s[0:tsvValueMaxlen] + " (...snipped)"
+}
+
 func tsvEscape(s string) string {
 	s = strconv.Quote(s)
 	return s[1 : len(s)-1]

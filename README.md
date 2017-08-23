@@ -44,3 +44,4 @@ Each columns are consisted by below:
 
 *   `-select` include SELECT statemnets
 *   `-debug` enable debug log
+*   `-column_maxlen` max length of each columns

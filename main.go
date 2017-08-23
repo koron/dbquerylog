@@ -208,12 +208,15 @@ func (c *conn) removeStatement(id uint32) {
 var (
 	debugFlag     bool
 	includeSelect bool
+	columnMaxlen     int
 )
 
 func main() {
 	flag.BoolVar(&debugFlag, "debug", false, "enable debug log")
 	flag.BoolVar(&includeSelect, "select", false, "include SELECT statements")
+	flag.IntVar(&columnMaxlen, "column_maxlen", 1024, "max length of columns")
 	flag.Parse()
+	tsvValueMaxlen = columnMaxlen
 	if debugFlag {
 		dbg = log.New(os.Stderr, " [DBG] ", 0)
 	} else {
