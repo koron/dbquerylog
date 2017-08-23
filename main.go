@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/koron/dbquerylog/mysqlasm"
@@ -151,8 +152,12 @@ func (c *conn) Closed() {
 
 func (c *conn) finishQuery() {
 	c.report.FinishQuery()
+	defer c.report.Reset()
+	if !includeSelect && strings.HasPrefix(strings.ToUpper(c.report.QueryString), "SELECT") {
+		return
+	}
 	err := tsvWrite(c.out,
-		c.report.StartTime.Format(time.RFC3339Nano),
+		c.report.StartTime.Format(time.RFC3339),
 		strconv.FormatInt(c.report.StartTime.UnixNano(), 10),
 		c.report.ClientAddr.String(),
 		c.report.ServerAddr.String(),
@@ -168,7 +173,6 @@ func (c *conn) finishQuery() {
 	if err != nil {
 		warn.Printf("failed to output report: %s", err)
 	}
-	c.report.Reset()
 }
 
 func (c *conn) addStatement(s *statement) {
@@ -202,11 +206,13 @@ func (c *conn) removeStatement(id uint32) {
 }
 
 var (
-	debugFlag bool
+	debugFlag     bool
+	includeSelect bool
 )
 
 func main() {
 	flag.BoolVar(&debugFlag, "debug", false, "enable debug log")
+	flag.BoolVar(&includeSelect, "select", false, "include SELECT statements")
 	flag.Parse()
 	if debugFlag {
 		dbg = log.New(os.Stderr, " [DBG] ", 0)

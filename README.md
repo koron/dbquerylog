@@ -26,7 +26,7 @@ Report format is based on TSV (tab separated values).
 Each rows represent database queries.
 Each columns are consisted by below:
 
-*   start time (in RFC3339Nano format)
+*   start time (in RFC3339 format)
 *   start time (in unix nanoseconds)
 *   client address (IP address and port)
 *   server address (IP address and port)
