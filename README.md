@@ -38,3 +38,8 @@ Each columns are consisted by below:
 *   elapsed time (nanosecond)
 *   query
 *   parameters (available for prepared statement only)
+
+## Options
+
+*   `-select` include SELECT statemnets
+*   `-debug` enable debug log
