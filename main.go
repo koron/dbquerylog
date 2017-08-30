@@ -208,7 +208,7 @@ func (c *conn) removeStatement(id uint32) {
 var (
 	debugFlag     bool
 	includeSelect bool
-	columnMaxlen     int
+	columnMaxlen  int
 )
 
 func main() {
