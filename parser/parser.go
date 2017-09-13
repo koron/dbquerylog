@@ -19,9 +19,11 @@ const (
 )
 
 type Parser struct {
-	r   *bufio.Reader
+	r   io.Reader
 	dir dir
 	ctx *Context
+
+	compressing bool
 
 	header [4]byte
 	pktLen int
@@ -66,6 +68,12 @@ func (pa *Parser) initParse() {
 	}
 	pa.SeqNums = pa.SeqNums[:0]
 	pa.Body = nil
+
+	//if !pa.compressing && pa.ctx.Compressing {
+	//	log.Printf("switch to decompressing\n")
+	//	pa.r = newDecompressor(pa.r)
+	//	pa.compressing = true
+	//}
 }
 
 func (pa *Parser) Parse() error {
@@ -101,6 +109,32 @@ func (pa *Parser) Parse() error {
 	}
 }
 
+func (pa *Parser) deflatePacket() error {
+	h := make([]byte, 3)
+	err := readN(pa.r, h)
+	if err != nil {
+		return err
+	}
+	deflateLen := packetLen(h)
+	if deflateLen == 0 {
+		return nil
+	}
+	fmt.Printf("pktLen=%d deflateLen=%d\n", pa.pktLen, deflateLen)
+	bb := new(bytes.Buffer)
+	_, err = io.CopyN(bb, pa.r, int64(pa.pktLen-len(h)))
+	if err != nil {
+		return err
+	}
+	/*
+		r := flate.NewReader(bb)
+		_, err = io.CopyN(pa.body, r, int64(deflateLen))
+		if err != nil {
+			return err
+		}
+	*/
+	return nil
+}
+
 func (pa *Parser) parseServerPacket() error {
 	if len(pa.Body) < 1 {
 		return errors.New("less body as packet from server")
@@ -124,6 +158,7 @@ func (pa *Parser) parseServerPacket() error {
 			}
 			pa.Detail = pkt
 			pa.ctx.State = Connected
+			pa.ctx.Compressing = pa.ctx.WillCompress
 			break
 		}
 		switch pa.ctx.LastCommand {
@@ -271,6 +306,7 @@ func (pa *Parser) parseClientPacket() error {
 			return err
 		}
 		pa.ctx.ClientFlags = pkt.ClientFlags
+		pa.ctx.WillCompress = pa.ctx.ClientFlags&ClientCompress != 0
 		pa.ctx.State = Auth
 		pa.Detail = pkt
 	case AuthResend:

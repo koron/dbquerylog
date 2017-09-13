@@ -54,6 +54,10 @@ type Command interface {
 type Context struct {
 	ClientFlags ClientFlags
 
+	// Compression support
+	WillCompress bool
+	Compressing  bool
+
 	State State
 
 	// Server status
