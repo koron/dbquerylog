@@ -162,7 +162,7 @@ func (pa *Parser) parseServerPacket() error {
 			return nil
 
 		default:
-			// TODO:
+			// TODO: parse other server commands
 			pa.Detail = nil
 			return nil
 		}

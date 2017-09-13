@@ -46,7 +46,7 @@ func test(db *sql.DB) error {
 	if err := test5(db); err != nil {
 		return err
 	}
-	// TODO:
+	// FIXME: implement other tests
 	if err := test99(db); err != nil {
 		return err
 	}
