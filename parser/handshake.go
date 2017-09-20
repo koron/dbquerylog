@@ -52,7 +52,9 @@ func NewClientHandshakePacket(b []byte) (*ClientHandshakePacket, error) {
 	buf.Discard(23)
 	pkt.Username, _ = buf.ReadString()
 	pkt.HashedPassword, _ = buf.ReadStringV()
-	pkt.Database, _ = buf.ReadString()
+	if len(buf.buf) > 0 {
+		pkt.Database, _ = buf.ReadString()
+	}
 	if buf.err != nil {
 		return nil, buf.err
 	}
