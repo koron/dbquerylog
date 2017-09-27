@@ -99,14 +99,12 @@ public class Compress {
                 Statement st = c.createStatement();
             ) {
             test0(st);
-            /*
             test1(st);
             test2(c);
             test3(c);
             test4();
             test5();
             test99(st);
-            */
         } catch (SQLException e) {
             e.printStackTrace();
         }

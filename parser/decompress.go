@@ -2,9 +2,8 @@ package parser
 
 import (
 	"bytes"
-	"compress/flate"
+	"compress/zlib"
 	"io"
-	"log"
 )
 
 type decompressor struct {
@@ -31,20 +30,16 @@ func (d *decompressor) Read(b []byte) (int, error) {
 }
 
 func (d *decompressor) deflateNext() error {
-	log.Printf("deflateNext: HERE1")
 	d.b.Reset()
 	err := readN(d.r, d.h[:])
-	log.Printf("deflateNext: HERE2")
 	if err != nil {
-		log.Printf("deflateNext: ERROR: %s", err)
 		return err
 	}
 	var (
 		clen = packetLen(d.h[0:3])
-		pnum = int(d.h[3])
+		_    = int(d.h[3])
 		dlen = packetLen(d.h[4:7])
 	)
-	log.Printf("deflateNext: clen=%d pnum=%d dlen=%d", clen, pnum, dlen)
 	if clen == 0 {
 		return nil
 	}
@@ -53,8 +48,20 @@ func (d *decompressor) deflateNext() error {
 	if err != nil {
 		return err
 	}
+	// use raw bytes when decompressed length is less than compressed one.
+	if dlen < clen {
+		d.b.Grow(clen)
+		_, err = io.CopyN(d.b, b, int64(clen))
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 	d.b.Grow(dlen)
-	fr := flate.NewReader(b)
+	fr, err := zlib.NewReader(b)
+	if err != nil {
+		return err
+	}
 	_, err = io.CopyN(d.b, fr, int64(dlen))
 	if err != nil {
 		return err

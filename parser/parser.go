@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"math"
 )
 
@@ -19,12 +18,23 @@ const (
 	fromClient
 )
 
+func (v dir) String() string {
+	switch v {
+	case fromServer:
+		return "server"
+	case fromClient:
+		return "client"
+	default:
+		return "(dir:unknown)"
+	}
+}
+
 type Parser struct {
 	r   io.Reader
 	dir dir
 	ctx *Context
 
-	compressing bool
+	decompressing bool
 
 	header [4]byte
 	pktLen int
@@ -70,15 +80,24 @@ func (pa *Parser) initParse() {
 	pa.SeqNums = pa.SeqNums[:0]
 	pa.Body = nil
 
-	if !pa.compressing && pa.ctx.Compressing {
+	if pa.shouldStartDecompress() {
 		pa.switchDecompress()
 	}
 }
 
+func (pa *Parser) shouldStartDecompress() bool {
+	return !pa.decompressing && pa.ctx.Compressing
+}
+
 func (pa *Parser) switchDecompress() {
-	log.Printf("switch to decompressing stream\n")
 	pa.r = newDecompressor(pa.r)
-	pa.compressing = true
+	pa.decompressing = true
+}
+
+func (pa *Parser) toReader(b []byte) io.Reader {
+	b2 := make([]byte, len(b))
+	copy(b2, b)
+	return bytes.NewBuffer(b)
 }
 
 func (pa *Parser) Parse() error {
@@ -89,9 +108,9 @@ func (pa *Parser) Parse() error {
 			return err
 		}
 		// re-parse stream with decompressing.
-		if !pa.compressing && pa.ctx.Compressing {
-			// TODO: push back.
-			switchDecompress()
+		if pa.shouldStartDecompress() {
+			pa.r = io.MultiReader(pa.toReader(pa.header[:]), pa.r)
+			pa.switchDecompress()
 			continue
 		}
 		pa.pktLen = packetLen(pa.header[:])
@@ -118,32 +137,6 @@ func (pa *Parser) Parse() error {
 	default:
 		return fmt.Errorf("unknown direction: %s", pa.dir)
 	}
-}
-
-func (pa *Parser) deflatePacket() error {
-	h := make([]byte, 3)
-	err := readN(pa.r, h)
-	if err != nil {
-		return err
-	}
-	deflateLen := packetLen(h)
-	if deflateLen == 0 {
-		return nil
-	}
-	fmt.Printf("pktLen=%d deflateLen=%d\n", pa.pktLen, deflateLen)
-	bb := new(bytes.Buffer)
-	_, err = io.CopyN(bb, pa.r, int64(pa.pktLen-len(h)))
-	if err != nil {
-		return err
-	}
-	/*
-		r := flate.NewReader(bb)
-		_, err = io.CopyN(pa.body, r, int64(deflateLen))
-		if err != nil {
-			return err
-		}
-	*/
-	return nil
 }
 
 func (pa *Parser) parseServerPacket() error {
