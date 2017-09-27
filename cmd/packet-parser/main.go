@@ -10,12 +10,14 @@ import (
 	"github.com/koron/dbquerylog/tcpasm"
 )
 
+var l = log.New(os.Stdout, "", log.LstdFlags)
+
 type conn struct {
 	addr tcpasm.Endpoint
 }
 
 func newConn(clientAddr, serverAddr tcpasm.Endpoint) mysqlasm.Conn {
-	log.Printf("connected with %s", clientAddr)
+	l.Printf("connected with %s", clientAddr)
 	return &conn{
 		addr: clientAddr,
 	}
@@ -30,11 +32,11 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 	if fromServer {
 		dir = "server"
 	}
-	log.Printf("%s(%s): %s", c.ID(), dir, pa.String())
+	l.Printf("%s(%s): %s", c.ID(), dir, pa.String())
 }
 
 func (c *conn) Closed() {
-	log.Printf("closed %s", c.ID())
+	l.Printf("closed %s", c.ID())
 }
 
 func main() {
