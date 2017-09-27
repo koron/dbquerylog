@@ -71,10 +71,14 @@ func (pa *Parser) initParse() {
 	pa.Body = nil
 
 	if !pa.compressing && pa.ctx.Compressing {
-		log.Printf("switch to decompressing\n")
-		pa.r = newDecompressor(pa.r)
-		pa.compressing = true
+		pa.switchDecompress()
 	}
+}
+
+func (pa *Parser) switchDecompress() {
+	log.Printf("switch to decompressing stream\n")
+	pa.r = newDecompressor(pa.r)
+	pa.compressing = true
 }
 
 func (pa *Parser) Parse() error {
@@ -83,6 +87,12 @@ func (pa *Parser) Parse() error {
 		err := readN(pa.r, pa.header[:])
 		if err != nil {
 			return err
+		}
+		// re-parse stream with decompressing.
+		if !pa.compressing && pa.ctx.Compressing {
+			// TODO: push back.
+			switchDecompress()
+			continue
 		}
 		pa.pktLen = packetLen(pa.header[:])
 		pa.PktLens = append(pa.PktLens, pa.pktLen)
