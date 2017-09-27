@@ -18,10 +18,23 @@ const (
 	fromClient
 )
 
+func (v dir) String() string {
+	switch v {
+	case fromServer:
+		return "server"
+	case fromClient:
+		return "client"
+	default:
+		return "(dir:unknown)"
+	}
+}
+
 type Parser struct {
-	r   *bufio.Reader
+	r   io.Reader
 	dir dir
 	ctx *Context
+
+	decompressing bool
 
 	header [4]byte
 	pktLen int
@@ -66,6 +79,25 @@ func (pa *Parser) initParse() {
 	}
 	pa.SeqNums = pa.SeqNums[:0]
 	pa.Body = nil
+
+	if pa.shouldStartDecompress() {
+		pa.switchDecompress()
+	}
+}
+
+func (pa *Parser) shouldStartDecompress() bool {
+	return !pa.decompressing && pa.ctx.Compressing
+}
+
+func (pa *Parser) switchDecompress() {
+	pa.r = newDecompressor(pa.r)
+	pa.decompressing = true
+}
+
+func (pa *Parser) toReader(b []byte) io.Reader {
+	b2 := make([]byte, len(b))
+	copy(b2, b)
+	return bytes.NewBuffer(b)
 }
 
 func (pa *Parser) Parse() error {
@@ -74,6 +106,12 @@ func (pa *Parser) Parse() error {
 		err := readN(pa.r, pa.header[:])
 		if err != nil {
 			return err
+		}
+		// re-parse stream with decompressing.
+		if pa.shouldStartDecompress() {
+			pa.r = io.MultiReader(pa.toReader(pa.header[:]), pa.r)
+			pa.switchDecompress()
+			continue
 		}
 		pa.pktLen = packetLen(pa.header[:])
 		pa.PktLens = append(pa.PktLens, pa.pktLen)
@@ -124,6 +162,7 @@ func (pa *Parser) parseServerPacket() error {
 			}
 			pa.Detail = pkt
 			pa.ctx.State = Connected
+			pa.ctx.Compressing = pa.ctx.WillCompress
 			break
 		}
 		switch pa.ctx.LastCommand {
@@ -271,6 +310,7 @@ func (pa *Parser) parseClientPacket() error {
 			return err
 		}
 		pa.ctx.ClientFlags = pkt.ClientFlags
+		pa.ctx.WillCompress = pa.ctx.ClientFlags&ClientCompress != 0
 		pa.ctx.State = Auth
 		pa.Detail = pkt
 	case AuthResend:

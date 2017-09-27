@@ -114,7 +114,7 @@ func (a *Assembler) parseLoop(r io.ReadCloser, pa *parser.Parser, fromServer boo
 			return
 		}
 		if err != nil {
-			a.warnf("failed parser for %s: %s", c.c.ID(), err)
+			a.warnf("failed parser for %s (server:%t): %s", c.c.ID(), fromServer, err)
 			continue
 		}
 		c.received(pa, fromServer)
