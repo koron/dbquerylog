@@ -95,7 +95,7 @@ public class Compress {
 
     public static void main(String[] args) {
         try (
-                Connection c = DriverManager.getConnection("jdbc:mysql://127.0.0.1/vagrant?useSSL=false", "vagrant", "db1234");
+                Connection c = DriverManager.getConnection("jdbc:mysql://127.0.0.1/vagrant?useSSL=false&useCompression=true", "vagrant", "db1234");
                 Statement st = c.createStatement();
             ) {
             test0(st);

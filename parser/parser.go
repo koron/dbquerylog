@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math"
 )
 
@@ -69,11 +70,11 @@ func (pa *Parser) initParse() {
 	pa.SeqNums = pa.SeqNums[:0]
 	pa.Body = nil
 
-	//if !pa.compressing && pa.ctx.Compressing {
-	//	log.Printf("switch to decompressing\n")
-	//	pa.r = newDecompressor(pa.r)
-	//	pa.compressing = true
-	//}
+	if !pa.compressing && pa.ctx.Compressing {
+		log.Printf("switch to decompressing\n")
+		pa.r = newDecompressor(pa.r)
+		pa.compressing = true
+	}
 }
 
 func (pa *Parser) Parse() error {
