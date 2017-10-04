@@ -15,6 +15,7 @@ type StreamCreated func(src, dst Endpoint, r io.ReadCloser) error
 
 type Assembler struct {
 	Warn    *log.Logger
+	Decoder gopacket.Decoder
 	Created StreamCreated
 }
 
@@ -30,6 +31,13 @@ func (a *Assembler) warn(args ...interface{}) {
 		return
 	}
 	a.Warn.Print(args...)
+}
+
+func (a *Assembler) decoder() gopacket.Decoder {
+	if a.Decoder == nil {
+		return layers.LayerTypeEthernet
+	}
+	return a.Decoder
 }
 
 func (a *Assembler) New(netFlow, tcpFlow gopacket.Flow) tcpassembly.Stream {
@@ -65,7 +73,7 @@ func (a *Assembler) Assemble(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	src := gopacket.NewPacketSource(pr, layers.LayerTypeEthernet)
+	src := gopacket.NewPacketSource(pr, a.decoder())
 	asm := tcpassembly.NewAssembler(tcpassembly.NewStreamPool(a))
 	for {
 		p, err := src.NextPacket()
