@@ -77,18 +77,18 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 
 	case *parser.ResultFieldNumPacket:
 		if c.report.Querying() {
-			c.report.ResponseSize += uint64(len(pa.Body))
+			c.report.ResponseSize += pa.PacketRawLen()
 			c.report.ColumnNum = pkt.Num
 		}
 
 	case *parser.ResultFieldPacket:
 		if c.report.Querying() {
-			c.report.ResponseSize += uint64(len(pa.Body))
+			c.report.ResponseSize += pa.PacketRawLen()
 		}
 
 	case *parser.ResultRecordPacket:
 		if c.report.Querying() {
-			c.report.ResponseSize += uint64(len(pa.Body))
+			c.report.ResponseSize += pa.PacketRawLen()
 			c.report.UpdatedRows++
 		}
 
@@ -97,14 +97,14 @@ func (c *conn) Received(pa *parser.Parser, fromServer bool) {
 
 	case *parser.EOFPacket:
 		if c.report.Querying() && pa.Context().ResultState == 0 {
-			c.report.ResponseSize += uint64(len(pa.Body))
+			c.report.ResponseSize += pa.PacketRawLen()
 			c.finishQuery()
 			return
 		}
 
 	case *parser.ResultNonePacket:
 		if c.report.Querying() {
-			c.report.ResponseSize += uint64(len(pa.Body))
+			c.report.ResponseSize += pa.PacketRawLen()
 			c.finishQuery()
 			return
 		}

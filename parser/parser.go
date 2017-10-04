@@ -30,7 +30,9 @@ func (v dir) String() string {
 }
 
 type Parser struct {
-	r   io.Reader
+	currR io.Reader
+	raw   *CountReader
+
 	dir dir
 	ctx *Context
 
@@ -49,19 +51,23 @@ type Parser struct {
 
 // NewFromServer creates a parser to parse packet from server.
 func NewFromServer(r io.Reader) *Parser {
+	cr := &CountReader{R: bufio.NewReader(r)}
 	return &Parser{
-		r:   bufio.NewReader(r),
-		dir: fromServer,
-		ctx: newContext(),
+		currR: cr,
+		raw:   cr,
+		dir:   fromServer,
+		ctx:   newContext(),
 	}
 }
 
 // NewFromServer creates a parser to parse packet from client.
 func NewFromClient(r io.Reader) *Parser {
+	cr := &CountReader{R: bufio.NewReader(r)}
 	return &Parser{
-		r:   bufio.NewReader(r),
-		dir: fromClient,
-		ctx: newContext(),
+		currR: cr,
+		raw:   cr,
+		dir:   fromClient,
+		ctx:   newContext(),
 	}
 }
 
@@ -81,16 +87,19 @@ func (pa *Parser) initParse() {
 	pa.Body = nil
 
 	if pa.shouldStartDecompress() {
-		pa.switchDecompress()
+		pa.switchDecompress(pa.raw)
 	}
+
+	// reset read bytes count.
+	pa.raw.N = 0
 }
 
 func (pa *Parser) shouldStartDecompress() bool {
 	return !pa.decompressing && pa.ctx.Compressing
 }
 
-func (pa *Parser) switchDecompress() {
-	pa.r = newDecompressor(pa.r)
+func (pa *Parser) switchDecompress(r io.Reader) {
+	pa.currR = newDecompressor(r)
 	pa.decompressing = true
 }
 
@@ -103,14 +112,13 @@ func (pa *Parser) toReader(b []byte) io.Reader {
 func (pa *Parser) Parse() error {
 	pa.initParse()
 	for {
-		err := readN(pa.r, pa.header[:])
+		err := readN(pa.currR, pa.header[:])
 		if err != nil {
 			return err
 		}
 		// re-parse stream with decompressing.
 		if pa.shouldStartDecompress() {
-			pa.r = io.MultiReader(pa.toReader(pa.header[:]), pa.r)
-			pa.switchDecompress()
+			pa.switchDecompress(io.MultiReader(pa.toReader(pa.header[:]), pa.raw))
 			continue
 		}
 		pa.pktLen = packetLen(pa.header[:])
@@ -119,7 +127,7 @@ func (pa *Parser) Parse() error {
 		if pa.pktLen == 0 {
 			break
 		}
-		_, err = io.CopyN(pa.body, pa.r, int64(pa.pktLen))
+		_, err = io.CopyN(pa.body, pa.currR, int64(pa.pktLen))
 		if err != nil {
 			return err
 		}
@@ -371,4 +379,8 @@ func (pa *Parser) ContextData() interface{} {
 
 func (pa *Parser) SetContextData(d interface{}) {
 	pa.ctx.Data = d
+}
+
+func (pa *Parser) PacketRawLen() uint64 {
+	return pa.raw.N
 }
