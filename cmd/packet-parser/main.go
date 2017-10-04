@@ -43,7 +43,7 @@ func main() {
 	flag.Parse()
 	asm := mysqlasm.New(nil, newConn)
 	asm.Warn = log.New(os.Stderr, "WARN ", log.LstdFlags)
-	err := asm.Assemble(os.Stdin)
+	err := asm.Assemble(os.Stdin, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
