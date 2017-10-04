@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/gopacket"
 	"github.com/koron/dbquerylog/mysqlasm"
 	"github.com/koron/dbquerylog/parser"
 	"github.com/koron/dbquerylog/tcpasm"
@@ -209,12 +210,14 @@ var (
 	debugFlag     bool
 	includeSelect bool
 	columnMaxlen  int
+	decoder       string
 )
 
 func main() {
 	flag.BoolVar(&debugFlag, "debug", false, "enable debug log")
 	flag.BoolVar(&includeSelect, "select", false, "include SELECT statements")
 	flag.IntVar(&columnMaxlen, "column_maxlen", 1024, "max length of columns")
+	flag.StringVar(&decoder, "decoder", "Ethernet", "name of the decoder to use")
 	flag.Parse()
 	tsvValueMaxlen = columnMaxlen
 	if debugFlag {
@@ -222,10 +225,14 @@ func main() {
 	} else {
 		dbg = log.New(ioutil.Discard, "", 0)
 	}
+	dec, ok := gopacket.DecodersByLayerName[decoder]
+	if !ok {
+		log.Fatalf("no decoder: %s", decoder)
+	}
 
 	asm := mysqlasm.New(nil, newConn)
 	asm.Warn = warn
-	err := asm.Assemble(os.Stdin)
+	err := asm.Assemble(os.Stdin, dec)
 	if err != nil {
 		log.Fatal(err)
 	}

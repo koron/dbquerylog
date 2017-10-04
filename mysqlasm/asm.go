@@ -7,6 +7,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/google/gopacket"
 	"github.com/koron/dbquerylog/parser"
 	"github.com/koron/dbquerylog/tcpasm"
 )
@@ -121,9 +122,10 @@ func (a *Assembler) parseLoop(r io.ReadCloser, pa *parser.Parser, fromServer boo
 	}
 }
 
-func (a *Assembler) Assemble(r io.Reader) error {
+func (a *Assembler) Assemble(r io.Reader, dec gopacket.Decoder) error {
 	asm := tcpasm.Assembler{
 		Warn:    a.Warn,
+		Decoder: dec,
 		Created: a.created,
 	}
 	return asm.Assemble(r)
