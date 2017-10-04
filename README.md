@@ -42,3 +42,10 @@ Each columns are consisted by below:
 *   `-select` include SELECT statemnets
 *   `-debug` enable debug log
 *   `-column_maxlen` max length of each columns
+*   `-decoder` name of the decoder to use
+
+    To parse tcpdump with `-i any`. Example:
+
+    ```console
+    $ sudo tcpdump -i any -s 0 -l -w - "tcp port 3306" | dbquerylog -decoder "Linux SLL"
+    ```
