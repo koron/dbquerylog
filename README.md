@@ -1,5 +1,7 @@
 # DB (MySQL) query logger
 
+[![CircleCI](https://circleci.com/gh/koron/dbquerylog.svg?style=svg)](https://circleci.com/gh/koron/dbquerylog)
+
 dbquerylog converts TCP dump to DB query log.
 
 ## Getting start
