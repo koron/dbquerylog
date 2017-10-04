@@ -13,7 +13,7 @@ func tsvWrite(w io.Writer, values ...string) error {
 				return err
 			}
 		}
-		_, err := io.WriteString(w, tsvEscape(v))
+		_, err := io.WriteString(w, tsvLimit(tsvEscape(v)))
 		if err != nil {
 			return err
 		}
