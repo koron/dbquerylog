@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"strconv"
+	"unicode/utf8"
 )
 
 func tsvWrite(w io.Writer, values ...string) error {
@@ -31,7 +32,14 @@ func tsvLimit(s string) string {
 	if tsvValueMaxlen <= 0 || len(s) < tsvValueMaxlen {
 		return s
 	}
-	return s[0:tsvValueMaxlen] + " (...snipped)"
+	n := tsvValueMaxlen
+	for i, r := range s {
+		if i+utf8.RuneLen(r) > tsvValueMaxlen {
+			n = i
+			break
+		}
+	}
+	return s[0:n] + " (...snipped)"
 }
 
 func tsvEscape(s string) string {
