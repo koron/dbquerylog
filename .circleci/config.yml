@@ -7,6 +7,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Check golang environment
+          command: go env
+      - run:
           name: Install dependencies
           command: go get -v -t -d ./...
       - run:
