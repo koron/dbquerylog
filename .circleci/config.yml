@@ -8,7 +8,9 @@ jobs:
       - checkout
       - run:
           name: Check golang environment
-          command: go env
+          command: |
+            go version
+            go env
       - run:
           name: Install dependencies
           command: go get -v -t -d ./...
