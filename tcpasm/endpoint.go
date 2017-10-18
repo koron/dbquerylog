@@ -27,3 +27,7 @@ func NewEndpoint(net, tcp gopacket.Endpoint) (Endpoint, error) {
 func (e Endpoint) String() string {
 	return fmt.Sprintf("%s:%d", e.Address, e.Port)
 }
+
+func (e Endpoint) PortString() string {
+	return strconv.FormatUint(uint64(e.Port), 10)
+}
