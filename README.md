@@ -60,7 +60,7 @@ Each columns are escaped by [`strconv.Quote()`][quote] then truncated by
 
 *   `-select` include SELECT statemnets
 *   `-debug` enable debug log
-*   `-column_maxlen` max length of each columns
+*   `-column_maxlen` max length of each columns (default 1024 bytes)
 *   `-decoder` name of the decoder to use
 
     To parse tcpdump with `-i any`. Example:
