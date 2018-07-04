@@ -64,11 +64,31 @@ Each columns are escaped by [`strconv.Quote()`][quote] then truncated by
 *   `-debug` enable debug log
 *   `-column_maxlen` max length of each columns (default 1024 bytes)
 *   `-decoder` name of the decoder to use
+*   `-pprof [addr]:{port}` enable performance monitor server on "[addr]:{port}"
 
     To parse tcpdump with `-i any`. Example:
 
     ```console
     $ sudo tcpdump -i any -s 0 -l -w - "tcp port 3306" | dbquerylog -decoder "Linux SLL"
     ```
+
+## Performance monitor
+
+To enable performance monitor add `-pprof :6060` like option.  This enable
+performance monitor server on `:6060`.
+
+Then you can get a snapshot of heap with curl or so:
+
+```console
+$ curl http://127.0.0.1:6060/debug/pprof/heap -o 20180704T135000.pb.gz
+```
+
+Or use `go tool pprof` to check.
+
+```console
+$ go tool pprof -http :8080 http://127.0.0.1:6060/debug/pprof/heap
+```
+
+NOTE: `pprof -http` requires `dot` command in graphviz.
 
 [quote]:https://golang.org/pkg/strconv/#Quote

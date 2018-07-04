@@ -5,6 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strconv"
 	"strings"
@@ -213,6 +215,7 @@ var (
 	includeSelect bool
 	columnMaxlen  int
 	decoder       string
+	pprofAddr     string
 )
 
 func main() {
@@ -220,6 +223,7 @@ func main() {
 	flag.BoolVar(&includeSelect, "select", false, "include SELECT statements")
 	flag.IntVar(&columnMaxlen, "column_maxlen", 1024, "max length of columns")
 	flag.StringVar(&decoder, "decoder", "Ethernet", "name of the decoder to use")
+	flag.StringVar(&pprofAddr, "pprof", "", `pprof address ex."127.0.0.1:6060". default is empty (disabled)`)
 	flag.Parse()
 	tsvValueMaxlen = columnMaxlen
 	if debugFlag {
@@ -230,6 +234,11 @@ func main() {
 	dec, ok := gopacket.DecodersByLayerName[decoder]
 	if !ok {
 		log.Fatalf("no decoder: %s", decoder)
+	}
+	if pprofAddr != "" {
+		go func() {
+			log.Printf("pprof failed: %s", http.ListenAndServe(pprofAddr, nil))
+		}()
 	}
 
 	asm := mysqlasm.New(nil, newConn)
