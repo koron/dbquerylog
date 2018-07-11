@@ -62,6 +62,7 @@ func (d *decompressor) deflateNext() error {
 	if err != nil {
 		return err
 	}
+	defer fr.Close()
 	_, err = io.CopyN(d.b, fr, int64(dlen))
 	if err != nil {
 		return err
