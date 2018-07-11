@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io"
 	"io/ioutil"
@@ -241,9 +242,10 @@ func main() {
 		}()
 	}
 
+	ctx := context.Background()
 	asm := mysqlasm.New(nil, newConn)
 	asm.Warn = warn
-	err := asm.Assemble(os.Stdin, dec)
+	err := asm.Assemble(ctx, os.Stdin, dec)
 	if err != nil {
 		log.Fatal(err)
 	}

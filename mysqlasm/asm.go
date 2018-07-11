@@ -122,11 +122,11 @@ func (a *Assembler) parseLoop(r io.ReadCloser, pa *parser.Parser, fromServer boo
 	}
 }
 
-func (a *Assembler) Assemble(r io.Reader, dec gopacket.Decoder) error {
+func (a *Assembler) Assemble(ctx context.Context, r io.Reader, dec gopacket.Decoder) error {
 	asm := tcpasm.Assembler{
 		Warn:    a.Warn,
 		Decoder: dec,
 		Created: a.created,
 	}
-	return asm.Assemble(r)
+	return asm.Assemble(ctx, r)
 }

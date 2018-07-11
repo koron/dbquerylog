@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"os"
@@ -43,7 +44,7 @@ func main() {
 	flag.Parse()
 	asm := mysqlasm.New(nil, newConn)
 	asm.Warn = log.New(os.Stderr, "WARN ", log.LstdFlags)
-	err := asm.Assemble(os.Stdin, nil)
+	err := asm.Assemble(context.Background(), os.Stdin, nil)
 	if err != nil {
 		log.Fatal(err)
 	}

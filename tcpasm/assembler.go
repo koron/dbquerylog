@@ -1,8 +1,10 @@
 package tcpasm
 
 import (
+	"context"
 	"io"
 	"log"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -17,6 +19,11 @@ type Assembler struct {
 	Warn    *log.Logger
 	Decoder gopacket.Decoder
 	Created StreamCreated
+
+	// FlushInterval is interval to calls
+	// tcpassembly.Assembler.FlushWithOptions() repeatedly.
+	// Defailt is 5min.
+	FlushInterval time.Duration
 }
 
 func (a *Assembler) warnf(f string, args ...interface{}) {
@@ -68,13 +75,32 @@ func (a *Assembler) created(netFlow, tcpFlow gopacket.Flow, s *tcpreader.ReaderS
 	}
 }
 
-func (a *Assembler) Assemble(r io.Reader) error {
+func (a *Assembler) flushLoop(ctx context.Context, asm *tcpassembly.Assembler) {
+	d := a.FlushInterval
+	if d == 0 {
+		d = 5 * time.Minute
+	}
+	ch := time.Tick(a.FlushInterval)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ch:
+			asm.FlushWithOptions(tcpassembly.FlushOptions{
+				T: time.Now().Add(-d),
+			})
+		}
+	}
+}
+
+func (a *Assembler) Assemble(ctx context.Context, r io.Reader) error {
 	pr, err := pcapgo.NewReader(r)
 	if err != nil {
 		return err
 	}
 	src := gopacket.NewPacketSource(pr, a.decoder())
 	asm := tcpassembly.NewAssembler(tcpassembly.NewStreamPool(a))
+	go a.flushLoop(ctx, asm)
 	for {
 		p, err := src.NextPacket()
 		if err == io.EOF {
@@ -84,6 +110,9 @@ func (a *Assembler) Assemble(r io.Reader) error {
 			continue
 		}
 		assemble(asm, p)
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 	}
 }
 
