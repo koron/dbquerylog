@@ -100,6 +100,10 @@ func (a *Assembler) Assemble(ctx context.Context, r io.Reader) error {
 	}
 	src := gopacket.NewPacketSource(pr, a.decoder())
 	asm := tcpassembly.NewAssembler(tcpassembly.NewStreamPool(a))
+	asm.AssemblerOptions = tcpassembly.AssemblerOptions{
+		MaxBufferedPagesPerConnection: 100,
+		MaxBufferedPagesTotal:         10000,
+	}
 	go a.flushLoop(ctx, asm)
 	for {
 		p, err := src.NextPacket()
