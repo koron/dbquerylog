@@ -14,7 +14,7 @@ const maxPacketSize = 1<<24 - 1
 // ReuseBufferMaxSize represent maximum size of buffer to reuse.  When size of
 // buffer is bigger than this, buffer will be destory and create agein to free
 // a big bunch of memory.
-var ReuseBufferMaxSize = 8 * 1024 * 1024
+var ReuseBufferMaxSize = 1024 * 1024
 
 type dir int
 
