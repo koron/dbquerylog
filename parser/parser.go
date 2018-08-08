@@ -11,6 +11,11 @@ import (
 
 const maxPacketSize = 1<<24 - 1
 
+// ReuseBufferMaxSize represent maximum size of buffer to reuse.  When size of
+// buffer is bigger than this, buffer will be destory and create agein to free
+// a big bunch of memory.
+var ReuseBufferMaxSize = 8 * 1024 * 1024
+
 type dir int
 
 const (
@@ -71,11 +76,20 @@ func NewFromClient(r io.Reader) *Parser {
 	}
 }
 
-func (pa *Parser) initParse() {
+func (pa *Parser) resetBuffer() {
 	if pa.body == nil {
 		pa.body = new(bytes.Buffer)
+		return
+	}
+	if ReuseBufferMaxSize > 0 && pa.body.Cap() > ReuseBufferMaxSize {
+		pa.body = new(bytes.Buffer)
+		return
 	}
 	pa.body.Reset()
+}
+
+func (pa *Parser) initParse() {
+	pa.resetBuffer()
 	if pa.PktLens == nil {
 		pa.PktLens = make([]int, 0, 10)
 	}

@@ -29,8 +29,16 @@ func (d *decompressor) Read(b []byte) (int, error) {
 	return d.b.Read(b)
 }
 
-func (d *decompressor) deflateNext() error {
+func (d *decompressor) resetBuffer() {
+	if ReuseBufferMaxSize > 0 && d.b.Cap() > ReuseBufferMaxSize {
+		d.b = new(bytes.Buffer)
+		return
+	}
 	d.b.Reset()
+}
+
+func (d *decompressor) deflateNext() error {
+	d.resetBuffer()
 	err := readN(d.r, d.h[:])
 	if err != nil {
 		return err
