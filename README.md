@@ -72,6 +72,18 @@ Each columns are escaped by [`strconv.Quote()`][quote] then truncated by
     $ sudo tcpdump -i any -s 0 -l -w - "tcp port 3306" | dbquerylog -decoder "Linux SLL"
     ```
 
+### Profile sub-options
+
+These options are enabled when `-pprof` is given and enabled.
+
+*   `-block_profile_rate` enables block profiling.
+
+    See <https://golang.org/pkg/runtime/#SetBlockProfileRate> for details.
+
+*   `-mutex_profile_frac` enables mutex profiling.
+
+    See <https://golang.org/pkg/runtime/#SetMutexProfileFraction> for details.
+
 ## Performance monitor
 
 To enable performance monitor add `-pprof :6060` like option.  This enable

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -217,6 +218,9 @@ var (
 	columnMaxlen  int
 	decoder       string
 	pprofAddr     string
+
+	blockProfileRate int
+	mutexProfileFrac int
 )
 
 func main() {
@@ -225,6 +229,8 @@ func main() {
 	flag.IntVar(&columnMaxlen, "column_maxlen", 1024, "max length of columns")
 	flag.StringVar(&decoder, "decoder", "Ethernet", "name of the decoder to use")
 	flag.StringVar(&pprofAddr, "pprof", "", `pprof address ex."127.0.0.1:6060". default is empty (disabled)`)
+	flag.IntVar(&blockProfileRate, "block_profile_rate", 1, `1 to enalbe block profile. default is 0 (disabled)`)
+	flag.IntVar(&mutexProfileFrac, "mutex_profile_frac", 1, `0 > to enalbe mutex profile. default is 0 (disabled)`)
 	flag.Parse()
 	tsvValueMaxlen = columnMaxlen
 	if debugFlag {
@@ -237,6 +243,12 @@ func main() {
 		log.Fatalf("no decoder: %s", decoder)
 	}
 	if pprofAddr != "" {
+		if blockProfileRate > 0 {
+			runtime.SetBlockProfileRate(blockProfileRate)
+		}
+		if mutexProfileFrac > 0 {
+			runtime.SetMutexProfileFraction(mutexProfileFrac)
+		}
 		go func() {
 			log.Printf("pprof failed: %s", http.ListenAndServe(pprofAddr, nil))
 		}()
