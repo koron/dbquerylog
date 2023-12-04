@@ -1,6 +1,8 @@
 # DB (MySQL) query logger
 
-[![CircleCI](https://circleci.com/gh/koron/dbquerylog.svg?style=svg)](https://circleci.com/gh/koron/dbquerylog)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/koron/dbquerylog)](https://pkg.go.dev/github.com/koron/dbquerylog)
+[![Actions/Go](https://github.com/koron/dbquerylog/workflows/Go/badge.svg)](https://github.com/koron/dbquerylog/actions?query=workflow%3AGo)
+[![Go Report Card](https://goreportcard.com/badge/github.com/koron/dbquerylog)](https://goreportcard.com/report/github.com/koron/dbquerylog)
 
 dbquerylog converts TCP dump to DB query log.
 
