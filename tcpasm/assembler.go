@@ -80,7 +80,7 @@ func (a *Assembler) flushLoop(ctx context.Context, asm *tcpassembly.Assembler) {
 	if d == 0 {
 		d = 5 * time.Minute
 	}
-	ticker := time.NewTicker(a.FlushInterval)
+	ticker := time.NewTicker(d)
 	defer ticker.Stop()
 	for {
 		select {

@@ -6,6 +6,8 @@ tmp/
 /dbquerylog.exe
 /packet-parser
 /packet-parser.exe
+/test-conn
+/test-conn.exe
 
 /.gradle/
 /build/
