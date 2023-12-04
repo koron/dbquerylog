@@ -9,6 +9,9 @@ dbquerylog converts TCP dump to DB query log.
 dbquerylog parses the output of TCP dump as MySQL's Client/Server protocol, and
 extracts information about queries from it.
 
+dbquerylog is tested with MySQL 5.6/5.7.
+It isn't tested with 8.0 or above yet.
+
 ## Getting start
 
 How to use.
