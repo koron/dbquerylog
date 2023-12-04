@@ -72,13 +72,11 @@ Each columns are escaped by [`strconv.Quote()`][quote] then truncated by
 *   `-debug` enable debug log
 *   `-column_maxlen` max length of each columns (default 1024 bytes)
 *   `-decoder` name of the decoder to use
+
+    Use `-list_decoders` to check all available decoders.
+
 *   `-pprof [addr]:{port}` enable performance monitor server on "[addr]:{port}"
 
-    To parse tcpdump with `-i any`. Example:
-
-    ```console
-    $ sudo tcpdump -i any -s 0 -l -w - "tcp port 3306" | dbquerylog -decoder "Linux SLL"
-    ```
 
 ### Profile sub-options
 
@@ -112,3 +110,11 @@ $ go tool pprof -http :8080 http://127.0.0.1:6060/debug/pprof/heap
 NOTE: `pprof -http` requires `dot` command in graphviz.
 
 [quote]:https://golang.org/pkg/strconv/#Quote
+
+## Other tips
+
+To parse tcpdump with `-i any`. Example:
+
+```console
+$ sudo tcpdump -i any -s 0 -l -w - "tcp port 3306" | dbquerylog -decoder "Linux SLL"
+```

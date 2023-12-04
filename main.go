@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -213,6 +215,7 @@ func (c *conn) removeStatement(id uint32) {
 
 var (
 	debugFlag     bool
+	listDecoders  bool
 	includeSelect bool
 	columnMaxlen  int
 	decoder       string
@@ -222,8 +225,18 @@ var (
 	mutexProfileFrac int
 )
 
+func decoders() []string {
+	list := make([]string, 0, len(gopacket.DecodersByLayerName))
+	for k := range gopacket.DecodersByLayerName {
+		list = append(list, k)
+	}
+	sort.Strings(list)
+	return list
+}
+
 func main() {
 	flag.BoolVar(&debugFlag, "debug", false, "enable debug log")
+	flag.BoolVar(&listDecoders, "list_decoders", false, "list all decoders")
 	flag.BoolVar(&includeSelect, "select", false, "include SELECT statements")
 	flag.IntVar(&columnMaxlen, "column_maxlen", 1024, "max length of columns")
 	flag.StringVar(&decoder, "decoder", "Ethernet", "name of the decoder to use")
@@ -236,6 +249,13 @@ func main() {
 		dbg = log.New(os.Stderr, " [DBG] ", 0)
 	} else {
 		dbg = log.New(io.Discard, "", 0)
+	}
+	if listDecoders {
+		fmt.Println("valid values for -decoder option:")
+		for _, d := range decoders() {
+			fmt.Printf("\t%s\n", d)
+		}
+		os.Exit(0)
 	}
 	dec, ok := gopacket.DecodersByLayerName[decoder]
 	if !ok {
