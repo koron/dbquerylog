@@ -80,12 +80,13 @@ func (a *Assembler) flushLoop(ctx context.Context, asm *tcpassembly.Assembler) {
 	if d == 0 {
 		d = 5 * time.Minute
 	}
-	ch := time.Tick(a.FlushInterval)
+	ticker := time.NewTicker(a.FlushInterval)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-ch:
+		case <-ticker.C:
 			asm.FlushWithOptions(tcpassembly.FlushOptions{
 				T: time.Now().Add(-d),
 			})

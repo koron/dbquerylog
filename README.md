@@ -1,8 +1,16 @@
 # DB (MySQL) query logger
 
-[![CircleCI](https://circleci.com/gh/koron/dbquerylog.svg?style=svg)](https://circleci.com/gh/koron/dbquerylog)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/koron/dbquerylog)](https://pkg.go.dev/github.com/koron/dbquerylog)
+[![Actions/Go](https://github.com/koron/dbquerylog/workflows/Go/badge.svg)](https://github.com/koron/dbquerylog/actions?query=workflow%3AGo)
+[![Go Report Card](https://goreportcard.com/badge/github.com/koron/dbquerylog)](https://goreportcard.com/report/github.com/koron/dbquerylog)
 
 dbquerylog converts TCP dump to DB query log.
+
+dbquerylog parses the output of TCP dump as MySQL's Client/Server protocol, and
+extracts information about queries from it.
+
+dbquerylog is tested with MySQL 5.6/5.7.
+It isn't tested with 8.0 or above yet.
 
 ## Getting start
 
