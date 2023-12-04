@@ -1,5 +1,12 @@
 package main
 
+// 1. Start MySQL with docker:
+//
+//		$ docker run --rm -e MYSQL_ROOT_PASSWORD=abcd1234 -p 3306:3306 --name test_mysql -d mysql:5.7.44
+//
+// 2. Run this program: `go run .` or `go run ./cmd/test-conn`
+// 3. Stop MySQL: `docker stop test_mysql`
+
 import (
 	"database/sql"
 	"fmt"
@@ -16,7 +23,7 @@ var (
 )
 
 func main() {
-	db, err := sql.Open("mysql", "vagrant:db1234@tcp(127.0.0.1:3306)/vagrant")
+	db, err := sql.Open("mysql", "root:abcd1234@tcp(127.0.0.1:3306)/mysql")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,6 +61,7 @@ func test(db *sql.DB) error {
 }
 
 func test0(db *sql.DB) error {
+	fmt.Println("test0: tests to list databases")
 	rows, err := db.Query(`SHOW DATABASES`)
 	if err != nil {
 		return err
@@ -65,12 +73,13 @@ func test0(db *sql.DB) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("test0: table:%s found\n", name)
+		fmt.Printf("    table:%s found\n", name)
 	}
 	return nil
 }
 
 func test1(db *sql.DB) error {
+	fmt.Println("test1: create a \"users\" table use in tests")
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS users (
 		id INT PRIMARY KEY AUTO_INCREMENT,
 		name VARCHAR(255) UNIQUE,
@@ -83,6 +92,7 @@ func test1(db *sql.DB) error {
 }
 
 func test2(db *sql.DB) error {
+	fmt.Println("test2: prepare statements")
 	var err error
 	stInsert, err = db.Prepare(
 		`INSERT INTO users (name, password) VALUES (?, ?)`)
@@ -106,17 +116,19 @@ func test2(db *sql.DB) error {
 }
 
 func test3(db *sql.DB) error {
+	fmt.Println("test3: tests an error in the statements")
 	var err error
 	_, err = db.Prepare(
 		`INSERT INTO users (name, password) VALUES (?, ?`)
 	if err == nil {
 		panic("prepare in test3 should be failed")
 	}
-	fmt.Printf("test3: IGNORED ERROR: %s\n", err)
+	fmt.Printf("    IGNORED ERROR: %s\n", err)
 	return nil
 }
 
 func test4(db *sql.DB) error {
+	fmt.Println("test4: insert 6 records")
 	insert := func(u, p string) error {
 		r, err := stInsert.Exec(u, p)
 		if err != nil {
@@ -126,7 +138,7 @@ func test4(db *sql.DB) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("test4: inserted %q as %d\n", u, id)
+		fmt.Printf("    inserted %q as %d\n", u, id)
 		return nil
 	}
 	if err := insert("foo", "pass1234"); err != nil {
@@ -151,6 +163,7 @@ func test4(db *sql.DB) error {
 }
 
 func test5(db *sql.DB) error {
+	fmt.Println("test5: query with wildcard \"user%\"")
 	rows, err := stSelect.Query("user%")
 	if err != nil {
 		return err
@@ -160,6 +173,7 @@ func test5(db *sql.DB) error {
 }
 
 func test99(db *sql.DB) error {
+	fmt.Println("test99: cleanup test resources")
 	if stDelete != nil {
 		stDelete.Close()
 	}
