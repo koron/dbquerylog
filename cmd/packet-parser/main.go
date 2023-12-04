@@ -42,7 +42,7 @@ func (c *conn) Closed() {
 
 func main() {
 	flag.Parse()
-	asm := mysqlasm.New(nil, newConn)
+	asm := mysqlasm.New(context.Background(), newConn)
 	asm.Warn = log.New(os.Stderr, "WARN ", log.LstdFlags)
 	err := asm.Assemble(context.Background(), os.Stdin, nil)
 	if err != nil {

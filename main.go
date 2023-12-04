@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -236,7 +235,7 @@ func main() {
 	if debugFlag {
 		dbg = log.New(os.Stderr, " [DBG] ", 0)
 	} else {
-		dbg = log.New(ioutil.Discard, "", 0)
+		dbg = log.New(io.Discard, "", 0)
 	}
 	dec, ok := gopacket.DecodersByLayerName[decoder]
 	if !ok {
@@ -255,7 +254,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	asm := mysqlasm.New(nil, newConn)
+	asm := mysqlasm.New(ctx, newConn)
 	asm.Warn = warn
 	err := asm.Assemble(ctx, os.Stdin, dec)
 	if err != nil {

@@ -14,7 +14,7 @@ type decbuf struct {
 	err error
 }
 
-var EOB = errors.New("not enough buffer")
+var ErrNotEnoughBuffer = errors.New("not enough buffer")
 
 func (b *decbuf) Read(p []byte) (int, error) {
 	n, m := len(p), len(b.buf)
@@ -35,7 +35,7 @@ func (b *decbuf) ReadUint8() (uint8, error) {
 		return 0, b.err
 	}
 	if len(b.buf) < 1 {
-		b.err = EOB
+		b.err = ErrNotEnoughBuffer
 		return 0, b.err
 	}
 	r := b.buf[0]
@@ -48,7 +48,7 @@ func (b *decbuf) ReadUint16() (uint16, error) {
 		return 0, b.err
 	}
 	if len(b.buf) < 2 {
-		b.err = EOB
+		b.err = ErrNotEnoughBuffer
 		return 0, b.err
 	}
 	r := binary.LittleEndian.Uint16(b.buf)
@@ -61,7 +61,7 @@ func (b *decbuf) ReadUint32() (uint32, error) {
 		return 0, b.err
 	}
 	if len(b.buf) < 4 {
-		b.err = EOB
+		b.err = ErrNotEnoughBuffer
 		return 0, b.err
 	}
 	r := binary.LittleEndian.Uint32(b.buf)
@@ -74,7 +74,7 @@ func (b *decbuf) ReadUint64() (uint64, error) {
 		return 0, b.err
 	}
 	if len(b.buf) < 8 {
-		b.err = EOB
+		b.err = ErrNotEnoughBuffer
 		return 0, b.err
 	}
 	r := binary.LittleEndian.Uint64(b.buf)
@@ -84,7 +84,7 @@ func (b *decbuf) ReadUint64() (uint64, error) {
 
 func (b *decbuf) readNUint(n int) (uint64, error) {
 	if len(b.buf) < n {
-		b.err = EOB
+		b.err = ErrNotEnoughBuffer
 		return 0, b.err
 	}
 	r := uint64(0)
@@ -100,7 +100,7 @@ func (b *decbuf) ReadUintV() (*UintV, error) {
 		return nil, b.err
 	}
 	if len(b.buf) < 1 {
-		b.err = EOB
+		b.err = ErrNotEnoughBuffer
 		return nil, b.err
 	}
 	f := b.buf[0]
@@ -161,7 +161,7 @@ func (b *decbuf) ReadStringV() (*StringV, error) {
 		return nil, b.err
 	}
 	if len(b.buf) < int(n) {
-		b.err = EOB
+		b.err = ErrNotEnoughBuffer
 		return nil, b.err
 	}
 	s := StringV(b.buf[:n])
@@ -174,7 +174,7 @@ func (b *decbuf) Discard(n int) error {
 		return b.err
 	}
 	if len(b.buf) < n {
-		b.err = EOB
+		b.err = ErrNotEnoughBuffer
 		return b.err
 	}
 	b.buf = b.buf[n:]

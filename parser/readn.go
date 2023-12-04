@@ -4,11 +4,6 @@ import (
 	"io"
 )
 
-type reader interface {
-	io.Reader
-	io.ByteReader
-}
-
 func readN(r io.Reader, b []byte) error {
 	for len(b) > 0 {
 		n, err := r.Read(b)

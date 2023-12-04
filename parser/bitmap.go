@@ -13,12 +13,13 @@ func (bm *bitmap) get(n uint16) bool {
 	return bm.b[i]&(1<<j) != 0
 }
 
-func (bm *bitmap) rank() uint16 {
-	c := bm.m
-	for i := uint16(0); i < bm.m; i++ {
-		if bm.get(i) {
-			c--
-		}
-	}
-	return c
-}
+// Unused private function.
+//func (bm *bitmap) rank() uint16 {
+//	c := bm.m
+//	for i := uint16(0); i < bm.m; i++ {
+//		if bm.get(i) {
+//			c--
+//		}
+//	}
+//	return c
+//}

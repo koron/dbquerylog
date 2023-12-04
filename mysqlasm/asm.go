@@ -23,9 +23,6 @@ type Assembler struct {
 }
 
 func New(ctx context.Context, f ConnFactory) *Assembler {
-	if ctx == nil {
-		ctx = context.Background()
-	}
 	return &Assembler{
 		ctx:        ctx,
 		f:          f,
