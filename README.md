@@ -12,6 +12,9 @@ extracts information about queries from it.
 dbquerylog is tested with MySQL 5.6/5.7.
 It isn't tested with 8.0 or above yet.
 
+Latest MySQL protocol is described in
+<https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_PROTOCOL.html>
+
 ## Getting start
 
 How to use.
