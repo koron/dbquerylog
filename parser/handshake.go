@@ -54,6 +54,8 @@ func NewClientHandshakePacket(b []byte) (*ClientHandshakePacket, error) {
 	pkt.MaxPacketSize, _ = buf.ReadUint32()
 	pkt.Charset, _ = buf.ReadUint8()
 	buf.Discard(23)
+	// XXX: To support SSL, stop parsing here.
+	// See also https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_connection_phase_packets_protocol_ssl_request.html
 	pkt.Username, _ = buf.ReadString()
 	pkt.HashedPassword, _ = buf.ReadStringV()
 	if pkt.ClientFlags&ClientConnectWithDB != 0 {
