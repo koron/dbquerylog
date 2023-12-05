@@ -1,5 +1,9 @@
 package parser
 
+import (
+	"fmt"
+)
+
 type ServerHandshakePacket struct {
 	ProtocolVersion  uint8
 	ServerVersion    string
@@ -34,7 +38,7 @@ func NewServerHandshakePacket(b []byte) (*ServerHandshakePacket, error) {
 type ClientHandshakePacket struct {
 	ClientFlags    ClientFlags
 	MaxPacketSize  uint32
-	Charset        *UintV
+	Charset        uint8
 	Username       string
 	HashedPassword *StringV
 	Database       string
@@ -48,7 +52,7 @@ func NewClientHandshakePacket(b []byte) (*ClientHandshakePacket, error) {
 	cflags, _ := buf.ReadUint32()
 	pkt.ClientFlags = ClientFlags(cflags)
 	pkt.MaxPacketSize, _ = buf.ReadUint32()
-	pkt.Charset, _ = buf.ReadUintV()
+	pkt.Charset, _ = buf.ReadUint8()
 	buf.Discard(23)
 	pkt.Username, _ = buf.ReadString()
 	pkt.HashedPassword, _ = buf.ReadStringV()
@@ -56,7 +60,7 @@ func NewClientHandshakePacket(b []byte) (*ClientHandshakePacket, error) {
 		pkt.Database, _ = buf.ReadString()
 	}
 	if buf.err != nil {
-		return nil, buf.err
+		return nil, fmt.Errorf("failed on parsing ClientHandshakePacket: %w", buf.err)
 	}
 	return pkt, nil
 }
