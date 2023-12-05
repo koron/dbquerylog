@@ -19,6 +19,7 @@ import (
 	"github.com/koron/dbquerylog/mysqlasm"
 	"github.com/koron/dbquerylog/parser"
 	"github.com/koron/dbquerylog/tcpasm"
+	"github.com/kr/pretty"
 )
 
 type conn struct {
@@ -43,6 +44,8 @@ var (
 	dbg  *log.Logger
 )
 
+var dumpLogger = log.New(os.Stderr, "[DUMP] ", 0)
+
 func newConn(clientAddr, serverAddr tcpasm.Endpoint) mysqlasm.Conn {
 	dbg.Println("")
 	dbg.Printf("connected %s", clientAddr.String())
@@ -62,6 +65,9 @@ func (c *conn) ID() string {
 }
 
 func (c *conn) Received(pa *parser.Parser, fromServer bool) {
+	if dumpMySQLPackets {
+		dumpLogger.Println(pretty.Sprintf("received MySQL packet: %# v", pa.Detail))
+	}
 	switch pkt := pa.Detail.(type) {
 
 	case *parser.ClientHandshakePacket:
@@ -214,7 +220,9 @@ func (c *conn) removeStatement(id uint32) {
 }
 
 var (
-	debugFlag     bool
+	debugFlag         bool
+	dumpMySQLPackets bool
+
 	listDecoders  bool
 	includeSelect bool
 	columnMaxlen  int
@@ -236,6 +244,7 @@ func decoders() []string {
 
 func main() {
 	flag.BoolVar(&debugFlag, "debug", false, "enable debug log")
+	flag.BoolVar(&dumpMySQLPackets, "dump_mysql_packets", false, "dump MySQL packets")
 	flag.BoolVar(&listDecoders, "list_decoders", false, "list all decoders")
 	flag.BoolVar(&includeSelect, "select", false, "include SELECT statements")
 	flag.IntVar(&columnMaxlen, "column_maxlen", 1024, "max length of columns")

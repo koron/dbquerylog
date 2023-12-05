@@ -6,12 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math"
 )
 
 type decbuf struct {
 	buf []byte
 	err error
+
+	errorChecked bool
 }
 
 var ErrNotEnoughBuffer = errors.New("not enough buffer")
@@ -125,7 +128,7 @@ func (b *decbuf) ReadUintV() (*UintV, error) {
 		n := UintV(m)
 		return &n, err
 	default:
-		b.err = fmt.Errorf("invalid byte for length-encoded integer: %02x", f)
+		b.err = fmt.Errorf("invalid byte for length-encoded integer: %02x (len:%d)", f, len(b.buf))
 		return nil, b.err
 	}
 }
@@ -198,4 +201,12 @@ func (b *decbuf) DiscardV() (*UintV, error) {
 		return nil, b.err
 	}
 	return p, b.Discard(int(n))
+}
+
+func (b *decbuf) ErrorCheck(label string) {
+	if b.errorChecked || b.err == nil {
+		return
+	}
+	b.errorChecked = true
+	log.Printf("error occurred on %s: %s", label, b.err)
 }
