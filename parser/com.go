@@ -23,7 +23,7 @@ func NewCOMPacket(b []byte, ctx *Context) (interface{}, error) {
 		return &QuitPacket{}, nil
 
 	case 0x03:
-		pkt, err := NewQueryPacket(b)
+		pkt, err := NewQueryPacket(b, ctx)
 		if err != nil {
 			return nil, err
 		}

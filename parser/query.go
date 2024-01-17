@@ -3,12 +3,32 @@ package parser
 import "fmt"
 
 type QueryPacket struct {
-	Query string
+	ParamCount    *UintV
+	ParamSetCount *UintV
+	Query         string
 }
 
-func NewQueryPacket(b []byte) (*QueryPacket, error) {
+// NewQueryPacket parses a COM_QUERY packet.
+// See https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_com_query.html also
+func NewQueryPacket(b []byte, ctx *Context) (*QueryPacket, error) {
 	// skip first byte, caller must check it.
-	return &QueryPacket{Query: string(b[1:])}, nil
+	var (
+		pkt QueryPacket
+		buf = &decbuf{buf: b[1:]}
+	)
+	// Parse query attributes (enabled by ClientFlag.ClientQueryAttributes)
+	if ctx.QueryAttributes {
+		pkt.ParamCount, _ = buf.ReadUintV()
+		pkt.ParamSetCount, _ = buf.ReadUintV() // currently always 1
+		if num := pkt.ParamCount.Uint64(); num != 0 {
+			// TODO: read parameters. see ExecuteQueryPacket.readParams also
+		}
+	}
+	pkt.Query, _ = buf.ReadStringAll()
+	if buf.err != nil {
+		return nil, buf.err
+	}
+	return &pkt, nil
 }
 
 func (p *QueryPacket) CommandType() CommandType {

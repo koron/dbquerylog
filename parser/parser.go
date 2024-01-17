@@ -333,6 +333,7 @@ func (pa *Parser) parseClientPacket() error {
 		}
 		pa.ctx.ClientFlags = pkt.ClientFlags
 		pa.ctx.WillCompress = pa.ctx.ClientFlags&ClientCompress != 0
+		pa.ctx.QueryAttributes = pa.ctx.ClientFlags&ClientQueryAttributes != 0
 		pa.ctx.State = Auth
 		pa.Detail = pkt
 	case AuthResend:

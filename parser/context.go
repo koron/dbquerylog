@@ -58,6 +58,9 @@ type Context struct {
 	WillCompress bool
 	Compressing  bool
 
+	// (client) Query attributes enabled
+	QueryAttributes bool
+
 	State State
 
 	// Server status

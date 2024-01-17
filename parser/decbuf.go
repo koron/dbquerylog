@@ -98,6 +98,7 @@ func (b *decbuf) readNUint(n int) (uint64, error) {
 	return r, nil
 }
 
+// ReadUintV parses an int<lenenc> value.
 func (b *decbuf) ReadUintV() (*UintV, error) {
 	if b.err != nil {
 		return nil, b.err
@@ -170,6 +171,16 @@ func (b *decbuf) ReadStringV() (*StringV, error) {
 	s := StringV(b.buf[:n])
 	b.buf = b.buf[n:]
 	return &s, nil
+}
+
+// ReadStringAll reads remained whole buffer as a string.
+func (b *decbuf) ReadStringAll() (string, error) {
+	if b.err != nil {
+		return "", b.err
+	}
+	s := string(b.buf)
+	b.buf = b.buf[len(b.buf):]
+	return s, nil
 }
 
 func (b *decbuf) Discard(n int) error {
