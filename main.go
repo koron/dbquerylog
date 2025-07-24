@@ -220,7 +220,7 @@ func (c *conn) removeStatement(id uint32) {
 }
 
 var (
-	debugFlag         bool
+	debugFlag        bool
 	dumpMySQLPackets bool
 
 	listDecoders  bool
