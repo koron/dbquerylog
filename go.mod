@@ -3,7 +3,7 @@ module github.com/koron/dbquerylog
 go 1.23.11
 
 require (
-	github.com/go-sql-driver/mysql v1.8.1
+	github.com/go-sql-driver/mysql v1.9.3
 	github.com/google/gopacket v1.1.19
 	github.com/kr/pretty v0.3.1
 )
