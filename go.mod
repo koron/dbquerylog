@@ -1,6 +1,6 @@
 module github.com/koron/dbquerylog
 
-go 1.23.11
+go 1.24.0
 
 require (
 	github.com/go-sql-driver/mysql v1.9.3
@@ -9,7 +9,7 @@ require (
 )
 
 require (
-	filippo.io/edwards25519 v1.1.0 // indirect
+	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
